@@ -90,11 +90,13 @@ button:hover {
   font-size: 1.1em;
   white-space: pre-wrap;
   word-wrap: break-word;
-  display: none; /* Hidden by default */
+  display: none;
+  /* Hidden by default */
 }
 
 .response-box.visible {
-  display: block; /* Show when the response is available */
+  display: block;
+  /* Show when the response is available */
 }
 
 @media (max-width: 600px) {
@@ -114,4 +116,11 @@ button:hover {
     font-size: 1rem;
     padding: 10px 15px;
   }
+}
+
+#street-input {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  font-size: 16px;
 }

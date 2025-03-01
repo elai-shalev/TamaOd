@@ -21,16 +21,19 @@
         <p class="intro-text">Enter an address below and click to analyze it.</p>
 
         <form id="addressForm">
+            <label for="street">Street:</label>
             <select id="street-select" name="street">
-                <option value="נחלת בנימין">Select a street</option>
+                <option value="">Select a street</option>
                 {% for street in streets %}
                 <option value="{{ street }}">{{ street }}</option>
                 {% endfor %}
             </select>
+
             <input type="number" id="houseNumber" placeholder="Enter street number" required>
             <input type="number" id="radius" placeholder="Enter radius in meters" required>
             <button type="submit" class="btn-submit">Analyze Address</button>
         </form>
+
 
         <div id="response" class="response-box">
             <!-- The server response will be displayed here -->
