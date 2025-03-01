@@ -3,18 +3,26 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: 'Arial', sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 body {
-  background-color: #f4f4f9;
-  color: #333;
-  line-height: 1.6;
+
+  background-image: url('../images/TLV_NEW.jpg');
+  background-size: cover;
+  background-position: center center;
+  background-attachment: fixed;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
 }
 
 .container {
   max-width: 800px;
-  margin: 0 auto;
+  width: 100%;
+  /* Make it responsive */
   padding: 20px;
   background-color: #fff;
   border-radius: 8px;
@@ -49,21 +57,18 @@ form {
 
 label {
   font-size: 1rem;
-  margin-bottom: 5px;
+  margin-bottom: 1px;
+  margin-top: 10px;
   color: #34495e;
 }
 
 input,
 select {
-  padding: 10px;
+  padding: 5px;
   font-size: 1rem;
   border: 1px solid #ccc;
   border-radius: 4px;
-  margin-top: 5px;
-}
-
-select {
-  height: 40px;
+  margin-top: 1px;
 }
 
 button {
@@ -118,9 +123,20 @@ button:hover {
   }
 }
 
-#street-input {
-  width: 100%;
-  padding: 10px;
-  margin: 10px 0;
-  font-size: 16px;
+
+/* Style for the number input fields */
+input[type="number"] {
+  width: auto;
+  max-width: 250px;
+  padding: 8px 12px;
+  margin: 0px 0;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Style the inputs with focus */
+input[type="number"]:focus {
+  border-color: #007bff;
+  outline: none;
 }

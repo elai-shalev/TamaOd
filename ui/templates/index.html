@@ -28,9 +28,10 @@
                 <option value="{{ street }}">{{ street }}</option>
                 {% endfor %}
             </select>
-
+            <label for="houseNumber">House Number:</label>
             <input type="number" id="houseNumber" placeholder="Enter street number" required>
-            <input type="number" id="radius" placeholder="Enter radius in meters" required>
+            <label for="radius">Radius in meters:</label>
+            <input type="number" id="radius" placeholder="Enter radius" value="50">
             <button type="submit" class="btn-submit">Analyze Address</button>
         </form>
 
