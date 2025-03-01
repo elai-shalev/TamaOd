@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TamaOd Home</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Welcome to Tama Od!</h1>
+        <h3>Tel Aviv is teeming with constuction! Building, renovating, and the most dreaded - Tama-38.
+            Ever fled your apartmenet just because it was noisy? Gave up on your dream house just because it had a
+            permit?
+            This application will let you find construction projects near your address
+            and evaluate the likelehood for construction nearby
+        </h3>
+        <p class="intro-text">Enter an address below and click to analyze it.</p>
+
+        <form id="addressForm">
+            <select id="street-select" name="street">
+                <option value="נחלת בנימין">Select a street</option>
+                {% for street in streets %}
+                <option value="{{ street }}">{{ street }}</option>
+                {% endfor %}
+            </select>
+            <input type="number" id="houseNumber" placeholder="Enter street number" required>
+            <input type="number" id="radius" placeholder="Enter radius in meters" required>
+            <button type="submit" class="btn-submit">Analyze Address</button>
+        </form>
+
+        <div id="response" class="response-box">
+            <!-- The server response will be displayed here -->
+        </div>
+    </div>
+
+    <script src="{% static 'js/script.js' %}"></script>
+</body>
+
+</html>
