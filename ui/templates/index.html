@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TamaOd Home</title>
+    <link rel="icon" type="image/x-icon" href="ui/static/images/favicon.ico">
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
@@ -12,11 +13,11 @@
 <body>
     <div class="container">
         <h1>Welcome to Tama Od!</h1>
-        <h3>Tel Aviv is teeming with constuction! Building, renovating, and the most dreaded - Tama-38.
-            Ever fled your apartmenet just because it was noisy? Gave up on your dream house just because it had a
-            permit?
-            This application will let you find construction projects near your address
-            and evaluate the likelehood for construction nearby
+        <h3>Tel Aviv is teeming with constuction! Building, renovating, and the most dreaded: Tama-38 project. <br>
+            Have you ever fled your apartmenet just because it was noisy? Gave up on your dream house just because it
+            had a permit to renovate? <br> <br>
+            TamaOd will let you find construction projects near your address
+            and evaluate the likelehood for construction nearby. <br>
         </h3>
         <p class="intro-text">Enter an address below and click to analyze it.</p>
 
@@ -29,7 +30,7 @@
                 {% endfor %}
             </select>
             <label for="houseNumber">House Number:</label>
-            <input type="number" id="houseNumber" placeholder="Enter street number" required>
+            <input type="number" id="houseNumber" placeholder="Enter house number" required>
             <label for="radius">Radius in meters:</label>
             <input type="number" id="radius" placeholder="Enter radius" value="50">
             <button type="submit" class="btn-submit">Analyze Address</button>

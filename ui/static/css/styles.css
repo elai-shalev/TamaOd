@@ -39,9 +39,18 @@ h1 {
   color: #2c3e50;
 }
 
+h3 {
+  font-size: 2rem;
+  color: #2c3e50;
+  font-weight: lighter;
+  font-size: medium;
+  margin-top: 2%;
+}
+
 .intro-text {
   color: #7f8c8d;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
+  margin-top: 2%;
 }
 
 form {
@@ -124,7 +133,6 @@ button:hover {
 }
 
 
-/* Style for the number input fields */
 input[type="number"] {
   width: auto;
   max-width: 250px;
