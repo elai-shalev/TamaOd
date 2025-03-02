@@ -55,9 +55,15 @@ document.getElementById("addressForm").addEventListener("submit", function (even
     })
         .then(response => response.json())
         .then(data => {
-            const responseBox = document.getElementById("response");
-            responseBox.classList.add("visible");
-            responseBox.innerText = JSON.stringify(data, null, 2);
+            const devResponseBox = document.getElementById("dev-response");
+            devResponseBox.classList.add("visible");
+            devResponseBox.innerText = JSON.stringify(data, null, 2);
+
+            const userResponseBox = document.getElementById("user-response");
+            userResponseBox.classList.add("visible");
+            userResponseBox.innerHTML = "<div> <p>The following addresses are problematic: </p><ul><li></li></ul></div>"
+
+
         });
 });
 

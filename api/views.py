@@ -11,12 +11,13 @@ def analyze_address(request):
             data = json.loads(request.body)  
             street = data.get("street")
             house_number = data.get("houseNumber")
+            radius = data.get("radius")
             
             if not street:
                 return JsonResponse({"error": "Missing 'street' field"}, status=400)
             if not house_number: 
                 return JsonResponse({"error": "Missing 'house number' field"}, status=400)
-            response_data = handel_address(street, house_number, radius=50)  
+            response_data = handel_address(street, house_number, radius)  
             return JsonResponse(response_data)  
 
         except json.JSONDecodeError:
