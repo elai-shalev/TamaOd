@@ -20,15 +20,18 @@ def handel_address(street, house_number, radius):
   coordinates_list = get_coordinate(street=street, house_number=house_number)
   # {"0": ["32.062745", "34.770447"], "1": ["32.064218", "34.775547"]}
   x = json.loads(coordinates_list)
-  get_all_places_in_radius(x["0"], radius)
+  y = get_all_places_in_radius(x["0"], radius)
+  # y = [{'addresses': 'הרצל 5, שדרות רוטשילד 9', 'building_stage': 'בבניה', 'sw_tama_38': 'לא'}]
 
 
-  return {"street": street, "tama":"yes", "security": 0.9} # + get_coordinate(street, house_number) # returns a dictionary, views.py will take care of JSONResponse
+  #return {"street": street, "tama":"yes", "security": 0.9} # + get_coordinate(street, house_number) # returns a dictionary, views.py will take care of JSONResponse
+  return y
 
 def get_coordinate(street, house_number):
-  # This function will contact Nominatim API to return thecoordinate point
+  # This function will contact Nominatim API to return the coordinate point
   # of the street name, house number and Tel aviv as a default city
 
+  # This line will add the context of "Tel Aviv" to the fuzzy search Nominatim is performing
   query_string = " ".join([street, house_number, "תל", "אביב"])
   url = "https://nominatim.openstreetmap.org/search?"
   params = {
@@ -72,7 +75,6 @@ def get_mock_json():
 def get_all_places_in_radius(coordinate, radius):
   url = "https://gisn.tel-aviv.gov.il/arcgis/rest/services/WM/IView2WM/MapServer/772/query?"
 
-  print(coordinate)
   geometry = {
     "x": float(coordinate[1]),
     "y": float(coordinate[0])
@@ -135,15 +137,37 @@ def get_all_places_in_radius(coordinate, radius):
     # print(response.url)  # Debugging: Check the final URL
     # print(response.json())  # Check the response content
 
-    data = '''[{'attributes': {'addresses': 'שדרות רוטשילד 16', 'building_stage': 'קיים היתר', 'sw_tama_38': 'לא'}}, {'attributes': {'addresses': 'שדרות רוטשילד 16', 'building_stage': 'קיים היתר', 'sw_tama_38': 'לא'}}, {'attributes': {'addresses': 'שדרות רוטשילד 16', 'building_stage': 'קיים היתר', 'sw_tama_38': 'לא'}}, {'attributes': {'addresses': 'שדרות רוטשילד 16', 'building_stage': 'קיים היתר', 'sw_tama_38': 'לא'}}, {'attributes': {'addresses': 'הרצל 5, שדרות רוטשילד 9', 'building_stage': 'בבניה', 'sw_tama_38': 'לא'}}, {'attributes': {'addresses': 'הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א', 'building_stage': 'בתהליך היתר', 'sw_tama_38': 'לא'}}, {'attributes': {'addresses': 'הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א', 'building_stage': 'בתהליך היתר', 'sw_tama_38': 'לא'}}, {'attributes': {'addresses': 'הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א', 'building_stage': 'בתהליך היתר', 'sw_tama_38': 'לא'}}, {'attributes': {'addresses': 'הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א', 'building_stage': 'בתהליך היתר', 'sw_tama_38': 'לא'}}, {'attributes': {'addresses': 'הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א', 'building_stage': 'בתהליך היתר', 'sw_tama_38': 'לא'}}, {'attributes': {'addresses': 'הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א', 'building_stage': 'בתהליך היתר', 'sw_tama_38': 'לא'}}, {'attributes': {'addresses': 'הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א', 'building_stage': 'בתהליך היתר', 'sw_tama_38': 'לא'}}, {'attributes': {'addresses': 'הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א', 'building_stage': 'בתהליך היתר', 'sw_tama_38': 'לא'}}]
-'''
+    data = '''[{"attributes": {"addresses": "שדרות רוטשילד 16", "building_stage": "קיים היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "שדרות רוטשילד 16", "building_stage": "קיים היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "שדרות רוטשילד 16", "building_stage": "קיים היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "שדרות רוטשילד 16", "building_stage": "קיים היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 5, שדרות רוטשילד 9", "building_stage": "בבניה", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}]'''
 
     #response.raise_for_status()
     # data = response.json()
     # print(data['features'])
     # return data['features']
-    print(data)
-    return data
+    print(type(data))
+    return analyze_places(data)
   except requests.RequestException as e:
       return JsonResponse({"error": "AAA"+str(e)}, status=500, safe=False)
 
+
+# This function will recieve a list of addresses in the queried radius
+# And will return a report of the 'dangerous' places   
+def analyze_places(data):
+   # example for data
+  print("AAAAA")
+  data = json.loads(data)
+  print(data)
+  dangerous_addresses = []
+  dangerous_stage = ["בבניה"]
+
+  # Iterate over each item in the list
+  for item in data:
+      attributes = item["attributes"]
+      
+      # Check if address is dangerous
+      if attributes.get("building_stage") in dangerous_stage:
+          dangerous_addresses.append(attributes)
+  
+  return dangerous_addresses
+
+#x = '''[{"attributes": {"addresses": "שדרות רוטשילד 16", "building_stage": "קיים היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "שדרות רוטשילד 16", "building_stage": "קיים היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "שדרות רוטשילד 16", "building_stage": "קיים היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "שדרות רוטשילד 16", "building_stage": "קיים היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 5, שדרות רוטשילד 9", "building_stage": "בבניה", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}]'''
+#print(analyze_places(x))

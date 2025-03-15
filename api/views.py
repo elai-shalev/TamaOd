@@ -18,7 +18,7 @@ def analyze_address(request):
             if not house_number: 
                 return JsonResponse({"error": "Missing 'house number' field"}, status=400)
             response_data = handel_address(street, house_number, radius)  
-            return JsonResponse(response_data)  
+            return JsonResponse(response_data, safe=False)  
 
         except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON"}, status=400)

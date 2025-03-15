@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
     const streetSelect = document.getElementById('street-select');
-    const streetInput = document.getElementById('street-input');
 
     // Fetch streets from the server
     fetch('/api/streets/')
@@ -25,15 +24,6 @@ document.addEventListener("DOMContentLoaded", function () {
             // Initial population of all streets
             updateStreetOptions(streets);
 
-            // Filter streets as user types
-            streetInput.addEventListener('input', function () {
-                const filteredStreets = streets.filter(street =>
-                    street.includes(searchValue)
-                );
-
-                updateStreetOptions(filteredStreets);
-            });
-
         })
         .catch(error => {
             console.error('Error fetching streets:', error);
@@ -51,7 +41,7 @@ document.getElementById("addressForm").addEventListener("submit", function (even
     fetch("/api/analyze/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ "street": street, "houseNumber": houseNumber, "radius": radius }),
+        body: JSON.stringify({ street: street, houseNumber: houseNumber, radius: radius }),
     })
         .then(response => response.json())
         .then(data => {
@@ -59,11 +49,39 @@ document.getElementById("addressForm").addEventListener("submit", function (even
             devResponseBox.classList.add("visible");
             devResponseBox.innerText = JSON.stringify(data, null, 2);
 
+            let addressListHTML = "<div><p>The following addresses are problematic:</p><ul>";
+            data.forEach(entry => {
+                let listItem = "<li>";
+
+                // Loop through each key in the entry object
+                for (const [key, value] of Object.entries(entry)) {
+                    // Add the key-value pair to the list item
+                    const fieldName = key.replace(/_/g, ' ').toUpperCase();  // Optional: clean up field names
+                    const fieldValue = value || `No ${fieldName} provided`;
+
+                    listItem += `${fieldName}: ${fieldValue}, `;
+                }
+
+                // Remove the last comma and space
+                listItem = listItem.slice(0, -2);
+                listItem += "</li>";
+
+                addressListHTML += listItem;
+            });
+            addressListHTML += "</ul></div>";
+
             const userResponseBox = document.getElementById("user-response");
             userResponseBox.classList.add("visible");
-            userResponseBox.innerHTML = "<div> <p>The following addresses are problematic: </p><ul><li></li></ul></div>"
+            userResponseBox.innerHTML = addressListHTML;
 
-
+            if (!Array.isArray(data) || data.length === 0) {
+                userResponseBox.innerHTML = "<p>No problematic addresses found. + </p>";
+                return;
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            document.getElementById("user-response").innerHTML = `<p style="color: red;">An error occurred. Please try again.</p>`;
         });
 });
 
