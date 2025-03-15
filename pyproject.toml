@@ -1,0 +1,22 @@
+[project]
+name = "TamaOd"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "Elai Shalev", email = "eshalev@redhat.com"},
+]
+dependencies = ["django>=5.1.6"]
+requires-python = "==3.13.*"
+readme = "README.md"
+license = {text = "MIT"}
+
+
+[tool.pdm]
+distribution = false
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+    "bandit>=1.8.3",
+    "ruff>=0.9.6",
+]
