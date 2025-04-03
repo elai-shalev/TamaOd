@@ -4,7 +4,7 @@ class BaseNominativeQuery(ABC):
     """Abstract base class for API services."""
 
     @abstractmethod
-    def fetch_data(self):
+    def fetch_data(self, street: str, house_number: int):
         """Fetch data from the API."""
         pass
     

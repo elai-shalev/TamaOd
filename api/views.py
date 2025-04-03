@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
-from .services import handel_address 
+from .services import handle_address 
 
 @csrf_exempt
 def analyze_address(request):
@@ -17,7 +17,7 @@ def analyze_address(request):
                 return JsonResponse({"error": "Missing 'street' field"}, status=400)
             if not house_number: 
                 return JsonResponse({"error": "Missing 'house number' field"}, status=400)
-            response_data = handel_address(street, house_number, radius)  
+            response_data = handle_address(street, house_number, radius)  
             return JsonResponse(response_data, safe=False)  
 
         except json.JSONDecodeError:

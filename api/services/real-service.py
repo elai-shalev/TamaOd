@@ -7,7 +7,7 @@ from api.services.base import BaseAPIService
 class RealNominativeQuery(BaseAPIService):
     """Real API implementation."""
     
-    def fetch_data(self, street, house_number):
+    def fetch_data(self, street: str, house_number: int):
       query_string = " ".join([street, house_number, "תל", "אביב"])
       url = "https://nominatim.openstreetmap.org/search?"
       params = {
