@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
-from .services import handle_address 
+from api.services import handle_address
 
 @csrf_exempt
 def analyze_address(request):

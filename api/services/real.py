@@ -1,11 +1,9 @@
 import requests
 import json
 from django.http import JsonResponse
-from api.services import analyze_places
-from api.services.base import BaseAPIService
+from api.services.base import BaseNominativeQuery, BaseGISNQuery
 
-class RealNominativeQuery(BaseAPIService):
-    """Real API implementation."""
+class RealNominativeQuery(BaseNominativeQuery):
     
     def fetch_data(self, street: str, house_number: int):
       query_string = " ".join([street, house_number, "תל", "אביב"])
@@ -38,10 +36,12 @@ class RealNominativeQuery(BaseAPIService):
       except requests.RequestException as e:
         return JsonResponse({"error": "AAA"+str(e)}, status=500, safe=False)
 
-class RealGISNQuery(BaseAPIService):
+class RealGISNQuery(BaseGISNQuery):
     """Real API implementation."""
     
-    def fetch_data(self, coordinate, radius):
+    def fetch_data(self, coordinate, radius: int):
+        from api.services import analyze_places
+
         url = "https://gisn.tel-aviv.gov.il/arcgis/rest/services/WM/IView2WM/MapServer/772/query?"
         
         geometry = {
