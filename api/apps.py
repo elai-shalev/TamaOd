@@ -11,7 +11,9 @@ class ApiConfig(AppConfig):
     def ready(self):
         """Register the appropriate API service."""
         use_mock_nominative = getattr(settings, "USE_MOCK_NOMINATIVE", False)
+        print(use_mock_nominative)
         use_mock_gisn = getattr(settings, "USE_MOCK_GISN", False)
+        print(use_mock_gisn)
 
         nominative_class = MockNominativeQuery if use_mock_nominative else RealNominativeQuery
         gisn_class = MockGISNQuery if use_mock_gisn else RealGISNQuery

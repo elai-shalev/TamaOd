@@ -40,14 +40,15 @@ class RealGISNQuery(BaseGISNQuery):
     """Real API implementation."""
     
     def fetch_data(self, coordinate, radius: int):
-        from api.services import analyze_places
+        print("HEYYYYY")
 
         url = "https://gisn.tel-aviv.gov.il/arcgis/rest/services/WM/IView2WM/MapServer/772/query?"
         
         geometry = {
-        "x": float(coordinate[1]),
-        "y": float(coordinate[0])
+        "x": float(coordinate[0]),
+        "y": float(coordinate[1]),
         }
+        print(geometry)
 
         out_fields = ",".join(["addresses", "building_stage","sw_tama_38"])
 
@@ -57,14 +58,14 @@ class RealGISNQuery(BaseGISNQuery):
           "objectIds": "",
           "time": "",
           "timeRelation": "esriTimeRelationOverlaps",
-          "geometry" : json.dumps(geometry),
+          "geometry": json.dumps(geometry),
           "geometryType": "esriGeometryPoint",
-          "inSR": "4326",
+           "inSR": "4326",
           "spatialRel": "esriSpatialRelIntersects",
           "distance": str(radius),
           "units": "esriSRUnit_Meter",
           "relationParam": "",
-          "outFields": out_fields,
+          "outFields": "*",
           "returnGeometry": "false",
           "returnTrueCurves": "false",
           "maxAllowableOffset": "",
@@ -101,6 +102,12 @@ class RealGISNQuery(BaseGISNQuery):
 
         try: 
           response = requests.get(url, params=params, headers=headers)
-          return analyze_places(response)
+          
+          print("Status Code:", response.status_code)
+          print("Response Body:", response.text)
+          data = response.json()
+          features = data.get("features", [])
+
+          return features  # 👈 returns a list!
         except requests.RequestException as e:
           return JsonResponse({"error": str(e)}, status=500, safe=False)
