@@ -45,8 +45,8 @@ class RealGISNQuery(BaseGISNQuery):
         url = "https://gisn.tel-aviv.gov.il/arcgis/rest/services/WM/IView2WM/MapServer/772/query?"
         
         geometry = {
-        "x": float(coordinate[0]),
-        "y": float(coordinate[1]),
+        "x": float(coordinate[1]),
+        "y": float(coordinate[0]),
         }
         print(geometry)
 
@@ -65,7 +65,7 @@ class RealGISNQuery(BaseGISNQuery):
           "distance": str(radius),
           "units": "esriSRUnit_Meter",
           "relationParam": "",
-          "outFields": "*",
+          "outFields": out_fields,
           "returnGeometry": "false",
           "returnTrueCurves": "false",
           "maxAllowableOffset": "",
@@ -102,12 +102,8 @@ class RealGISNQuery(BaseGISNQuery):
 
         try: 
           response = requests.get(url, params=params, headers=headers)
-          
-          print("Status Code:", response.status_code)
-          print("Response Body:", response.text)
           data = response.json()
           features = data.get("features", [])
-
-          return features  # 👈 returns a list!
+          return features
         except requests.RequestException as e:
           return JsonResponse({"error": str(e)}, status=500, safe=False)

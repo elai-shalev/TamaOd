@@ -1,7 +1,10 @@
-.pyc
 api/__pycache__*
-*.cpy*
+*.pyc
 TamaOd/__pycache__*
+TamaOd/db.sqlite3
+api/services/__pycache__
+api/__pycache__
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -107,3 +110,6 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+api/__pycache__/apps.cpython-313.pyc
+api/__pycache__/views.cpython-313.pyc
+TamaOd/__pycache__/settings.cpython-313.pyc
