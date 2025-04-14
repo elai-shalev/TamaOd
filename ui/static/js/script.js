@@ -49,35 +49,33 @@ document.getElementById("addressForm").addEventListener("submit", function (even
             devResponseBox.classList.add("visible");
             devResponseBox.innerText = JSON.stringify(data, null, 2);
 
-            let addressListHTML = "<div><p>The following addresses are problematic:</p><ul>";
-            data.forEach(entry => {
-                let listItem = "<li>";
+            if (!Array.isArray(data) || data.length === 0) {
+                userResponseBox.innerHTML = "<p>No problematic addresses found. + </p>";
+                return;
+            }
 
-                // Loop through each key in the entry object
-                for (const [key, value] of Object.entries(entry)) {
-                    // Add the key-value pair to the list item
-                    const fieldName = key.replace(/_/g, ' ').toUpperCase();  // Optional: clean up field names
-                    const fieldValue = value || `No ${fieldName} provided`;
-
-                    listItem += `${fieldName}: ${fieldValue}, `;
-                }
-
-                // Remove the last comma and space
-                listItem = listItem.slice(0, -2);
-                listItem += "</li>";
-
-                addressListHTML += listItem;
-            });
-            addressListHTML += "</ul></div>";
+            const addressListHTML = `
+            <div>
+                <p>The following addresses are problematic:</p>
+                <ul>
+                    ${data.map(entry => {
+                const details = Object.entries(entry)
+                    .map(([key, value]) => {
+                        const fieldName = key.replace(/_/g, ' ').toUpperCase();
+                        const fieldValue = value || `No ${fieldName} provided`;
+                        return `${fieldName}: ${fieldValue}`;
+                    })
+                    .join(', ');
+                return `<li>${details}</li>`;
+            }).join('')}
+                </ul>
+            </div>
+            `;
 
             const userResponseBox = document.getElementById("user-response");
             userResponseBox.classList.add("visible");
             userResponseBox.innerHTML = addressListHTML;
 
-            if (!Array.isArray(data) || data.length === 0) {
-                userResponseBox.innerHTML = "<p>No problematic addresses found. + </p>";
-                return;
-            }
         })
         .catch(error => {
             console.error("Error:", error);

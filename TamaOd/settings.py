@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 USE_MOCK_NOMINATIVE = True
-#USE_MOCK_GISN = True
+USE_MOCK_GISN = True
 
 from pathlib import Path
 
