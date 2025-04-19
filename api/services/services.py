@@ -10,12 +10,9 @@ def handle_address(street, house_number, radius):
     """
     nominative_service = app_state.get_nominative_service()
     gisn_service = app_state.get_gisn_service()
-    print(gisn_service)
 
     address_coordinate = nominative_service.fetch_data(street, house_number)
     places_in_radius = gisn_service.fetch_data(address_coordinate, radius)
-    print("PLACE IN RADIUS:")
-    print(places_in_radius)
     dangerous_places = risk_assessment(places_in_radius)
     return dangerous_places
 

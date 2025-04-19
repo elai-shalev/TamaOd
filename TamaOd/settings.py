@@ -11,7 +11,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 # Comment out the Mock variables to use the real apis
-USE_MOCK_NOMINATIVE = True
+# Please note that the GISN mock is using a constant address regardless of the NOMINATIVE returned coordinate 
+#USE_MOCK_NOMINATIVE = True
 #USE_MOCK_GISN = True
 
 from pathlib import Path

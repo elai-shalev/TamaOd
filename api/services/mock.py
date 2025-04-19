@@ -8,10 +8,10 @@ class MockNominativeQuery(BaseNominativeQuery):
         parsed = json.loads(data)
         lat = float(parsed[0]["lat"])
         lon = float(parsed[0]["lon"])
-        return (lat, lon)
+        return (lon, lat)
     
 class MockGISNQuery(BaseGISNQuery):
     
     def fetch_data(self, coordinate, radius: int):
         places_in_radius = '''[{"attributes": {"addresses": "שדרות רוטשילד 16", "building_stage": "קיים היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "שדרות רוטשילד 16", "building_stage": "קיים היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "שדרות רוטשילד 16", "building_stage": "קיים היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "שדרות רוטשילד 16", "building_stage": "קיים היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 5, שדרות רוטשילד 9", "building_stage": "בבניה", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}, {"attributes": {"addresses": "הרצל 7, שדרות רוטשילד 10, שדרות רוטשילד 10א", "building_stage": "בתהליך היתר", "sw_tama_38": "לא"}}]'''
-        return places_in_radius
+        return json.loads(places_in_radius)
