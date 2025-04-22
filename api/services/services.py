@@ -18,7 +18,6 @@ def handle_address(street, house_number, radius):
 
 def risk_assessment(dangerous_places):
     """Filter and return 'dangerous' places from the GISN data."""
-    #dangerous_places = json.loads(dangerous_places)
     dangerous_addresses = []
     dangerous_stage = ["בבניה"]
 

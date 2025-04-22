@@ -14,19 +14,15 @@ class RealNominativeQuery(BaseNominativeQuery):
       }
 
       headers = {
-        "User-Agent": "TamaApp/1.0 (eshalev@redhat.com)",  # Identify your app + contact info
-        "Referer": "https://github.com/elai-shalev/TamaOd"  # Optional but helps with credibility
+        "User-Agent": "TamaApp/1.0 (eshalev@redhat.com)",
+        "Referer": "https://github.com/elai-shalev/TamaOd"
       }
 
       try: 
         response = requests.get(url, params=params, headers=headers, timeout=5)
         
         response.raise_for_status()
-        data = response.json()
-
-       #[{'place_id': 195444241, 'licence': 'Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright', 'osm_type': 'way', 'osm_id': 149384937, 'lat': '32.0834474', 'lon': '34.7816799', 'class': 'amenity', 'type': 'restaurant', 'place_rank': 30, 'importance': 7.500038147550191e-05, 'addresstype': 'amenity', 'name': 'אמורה מיו', 'display_name': 'אמורה מיו, 100, אבן גבירול, הצפון החדש - החלק הדרומי, הצפון החדש, תל־אביב–יפו, נפת תל אביב, מחוז תל אביב, 6296802, ישראל', 'boundingbox': ['32.0833959', '32.0835422', '34.7815499', '34.7818089']}, {'place_id': 195886935, 'licence': 'Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright', 'osm_type': 'node', 'osm_id': 2078972513, 'lat': '32.0834730', 'lon': '34.7815920', 'class': 'place', 'type': 'house', 'place_rank': 30, 'importance': 7.500038147550191e-05, 'addresstype': 'place', 'name': '', 'display_name': '100, אבן גבירול, הצפון החדש - החלק הדרומי, הצפון החדש, תל־אביב–יפו, נפת תל אביב, מחוז תל אביב, 6296802, ישראל', 'boundingbox': ['32.0834230', '32.0835230', '34.7815420', '34.7816420']}]
-
-            
+        data = response.json()            
         places = {}
         for i, place in enumerate(data):
             lat = place.get('lat')
@@ -38,7 +34,7 @@ class RealNominativeQuery(BaseNominativeQuery):
         return places[0]
       
       except requests.RequestException as e:
-        return JsonResponse({"error": "AAA"+str(e)}, status=500, safe=False)
+        return JsonResponse({"error": str(e)}, status=500, safe=False)
 
 class RealGISNQuery(BaseGISNQuery):
     """Real API implementation."""
