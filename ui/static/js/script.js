@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
     const streetSelect = document.getElementById('street-select');
-    const streetInput = document.getElementById('street-input');
 
     // Fetch streets from the server
     fetch('/api/streets/')
@@ -25,15 +24,6 @@ document.addEventListener("DOMContentLoaded", function () {
             // Initial population of all streets
             updateStreetOptions(streets);
 
-            // Filter streets as user types
-            streetInput.addEventListener('input', function () {
-                const filteredStreets = streets.filter(street =>
-                    street.includes(searchValue)
-                );
-
-                updateStreetOptions(filteredStreets);
-            });
-
         })
         .catch(error => {
             console.error('Error fetching streets:', error);
@@ -51,13 +41,45 @@ document.getElementById("addressForm").addEventListener("submit", function (even
     fetch("/api/analyze/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ "street": street, "houseNumber": houseNumber, "radius": radius }),
+        body: JSON.stringify({ street: street, houseNumber: houseNumber, radius: radius }),
     })
         .then(response => response.json())
         .then(data => {
-            const responseBox = document.getElementById("response");
-            responseBox.classList.add("visible");
-            responseBox.innerText = JSON.stringify(data, null, 2);
+            const devResponseBox = document.getElementById("dev-response");
+            devResponseBox.classList.add("visible");
+            devResponseBox.innerText = JSON.stringify(data, null, 2);
+
+            if (!Array.isArray(data) || data.length === 0) {
+                userResponseBox.innerHTML = "<p>No problematic addresses found. + </p>";
+                return;
+            }
+
+            const addressListHTML = `
+            <div>
+                <p>The following addresses are problematic:</p>
+                <ul>
+                    ${data.map(entry => {
+                const details = Object.entries(entry)
+                    .map(([key, value]) => {
+                        const fieldName = key.replace(/_/g, ' ').toUpperCase();
+                        const fieldValue = value || `No ${fieldName} provided`;
+                        return `${fieldName}: ${fieldValue}`;
+                    })
+                    .join(', ');
+                return `<li>${details}</li>`;
+            }).join('')}
+                </ul>
+            </div>
+            `;
+
+            const userResponseBox = document.getElementById("user-response");
+            userResponseBox.classList.add("visible");
+            userResponseBox.innerHTML = addressListHTML;
+
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            document.getElementById("user-response").innerHTML = `<p style="color: red;">An error occurred. Please try again.</p>`;
         });
 });
 
