@@ -6,5 +6,7 @@ __all__ = [
     "MockGISNQuery",
     "MockNominativeQuery",
     "RealGISNQuery",
-    "RealNominativeQuery"
+    "RealNominativeQuery",
+    "handle_address",
+    "risk_assessment",
 ]

@@ -1,6 +1,7 @@
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
+from pathlib import Path
 from api.services import handle_address
 
 @csrf_exempt
@@ -26,7 +27,7 @@ def analyze_address(request):
 
 @csrf_exempt
 def get_streets(request):
-    with open('api/data/streets.json', encoding='utf-8') as f:
+    with Path('api/data/streets.json', encoding='utf-8').open() as f:
         street_data = json.load(f)
     street_names = street_data.get("t_rechov_values", [])
     return JsonResponse({"streets": street_names})
