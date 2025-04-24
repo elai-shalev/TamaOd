@@ -1,4 +1,3 @@
-import json
 from api import app_state
 
 def handle_address(street, house_number, radius):
@@ -13,8 +12,7 @@ def handle_address(street, house_number, radius):
 
     address_coordinate = nominative_service.fetch_data(street, house_number)
     places_in_radius = gisn_service.fetch_data(address_coordinate, radius)
-    dangerous_places = risk_assessment(places_in_radius)
-    return dangerous_places
+    return risk_assessment(places_in_radius)
 
 def risk_assessment(dangerous_places):
     """Filter and return 'dangerous' places from the GISN data."""

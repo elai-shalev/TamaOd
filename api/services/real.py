@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from api.services.base import BaseNominativeQuery, BaseGISNQuery
 
 class RealNominativeQuery(BaseNominativeQuery):
-    
+
     def fetch_data(self, street: str, house_number: int):
       query_string = " ".join([street, str(house_number), "תל", "אביב"])
       url = "https://nominatim.openstreetmap.org/search?"
@@ -18,11 +18,11 @@ class RealNominativeQuery(BaseNominativeQuery):
         "Referer": "https://github.com/elai-shalev/TamaOd"
       }
 
-      try: 
+      try:
         response = requests.get(url, params=params, headers=headers, timeout=5)
-        
+
         response.raise_for_status()
-        data = response.json()            
+        data = response.json()
         places = {}
         for i, place in enumerate(data):
             lat = place.get('lat')
@@ -32,17 +32,17 @@ class RealNominativeQuery(BaseNominativeQuery):
         if len(places) == 0:
             return JsonResponse({"error": "could not locate address"}, status=500)
         return places[0]
-      
+
       except requests.RequestException as e:
         return JsonResponse({"error": str(e)}, status=500, safe=False)
 
 class RealGISNQuery(BaseGISNQuery):
     """Real API implementation."""
-    
+
     def fetch_data(self, coordinate, radius: int):
 
         url = "https://gisn.tel-aviv.gov.il/arcgis/rest/services/WM/IView2WM/MapServer/772/query?"
-        
+
         geometry = {
         "x": float(coordinate[0]),
         "y": float(coordinate[1]),
@@ -98,10 +98,9 @@ class RealGISNQuery(BaseGISNQuery):
               "Accept-Language": "en-US,en;q=0.9",
         }
 
-        try: 
+        try:
           response = requests.get(url, params=params, headers=headers)
           data = response.json()
-          features = data.get("features", [])
-          return features
+          return data.get("features", [])
         except requests.RequestException as e:
           return JsonResponse({"error": str(e)}, status=500, safe=False)

@@ -5,4 +5,4 @@ Analyze addresses for possible construction
 To run this app in development mode, run:
 ```pdm run manage.py runserver```
 
-To change app_state to use mock apis - Uncomment the API varaibles in TamaOd/settings.py
+To change app_state to use mock apis - Uncomment the API varaibles in tamaod/settings.py
