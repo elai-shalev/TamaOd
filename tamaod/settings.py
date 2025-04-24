@@ -56,7 +56,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'TamaOd.urls'
+ROOT_URLCONF = 'tamaod.urls'
 
 TEMPLATES = [
     {
@@ -74,7 +74,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'TamaOd.wsgi.application'
+WSGI_APPLICATION = 'tamaod.wsgi.application'
 
 
 # Database

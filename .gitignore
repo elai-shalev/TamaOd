@@ -1,7 +1,7 @@
 api/__pycache__*
 *.pyc
-TamaOd/__pycache__*
-TamaOd/db.sqlite3
+tamaod/__pycache__*
+tamaod/db.sqlite3
 api/services/__pycache__
 api/__pycache__
 __pycache__/
@@ -113,6 +113,6 @@ cython_debug/
 .pypirc
 api/__pycache__/apps.cpython-313.pyc
 api/__pycache__/views.cpython-313.pyc
-TamaOd/__pycache__/settings.cpython-313.pyc
+tamaod/__pycache__/settings.cpython-313.pyc
 /pycache/*
 
