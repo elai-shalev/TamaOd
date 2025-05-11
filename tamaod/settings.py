@@ -16,16 +16,29 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 #USE_MOCK_GISN = True
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+ENVIRONMENT = os.getenv('DJANGO_ENV', 'production')
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+if ENVIRONMENT == 'production':
+    dotenv_path = BASE_DIR / '.env.prod'
+elif ENVIRONMENT == 'test':
+    dotenv_path = BASE_DIR / '.env.test'
+else:  # Assume development
+    dotenv_path = BASE_DIR / '.env'
+
+load_dotenv(dotenv_path=dotenv_path)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-rx)xu4d-^(x1inmlphs=k92c75cu+gk60sy@cejo6lzmuosu2)'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True

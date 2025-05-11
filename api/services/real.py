@@ -1,11 +1,13 @@
 import requests
 import json
+import os
 from django.http import JsonResponse
 from api.services.base import BaseNominativeQuery, BaseGISNQuery
 
 class RealNominativeQuery(BaseNominativeQuery):
 
     def fetch_data(self, street: str, house_number: int):
+      
       query_string = " ".join([street, str(house_number), "תל", "אביב"])
       url = "https://nominatim.openstreetmap.org/search?"
       params = {
@@ -14,8 +16,8 @@ class RealNominativeQuery(BaseNominativeQuery):
       }
 
       headers = {
-        "User-Agent": "TamaApp/1.0 (eshalev@redhat.com)",
-        "Referer": "https://github.com/elai-shalev/TamaOd"
+        "User-Agent": os.getenv('USER_AGENT'),
+        "Referer": os.getenv('REFERRER')
       }
 
       try:
