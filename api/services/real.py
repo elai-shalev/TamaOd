@@ -7,7 +7,6 @@ from api.services.base import BaseNominativeQuery, BaseGISNQuery
 class RealNominativeQuery(BaseNominativeQuery):
 
     def fetch_data(self, street: str, house_number: int):
-      
       query_string = " ".join([street, str(house_number), "תל", "אביב"])
       url = "https://nominatim.openstreetmap.org/search?"
       params = {
@@ -22,7 +21,6 @@ class RealNominativeQuery(BaseNominativeQuery):
 
       try:
         response = requests.get(url, params=params, headers=headers, timeout=5)
-
         response.raise_for_status()
         data = response.json()
         places = {}
