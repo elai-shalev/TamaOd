@@ -1,5 +1,6 @@
 import requests
 import json
+import os
 from django.http import JsonResponse
 from api.services.base import BaseNominativeQuery, BaseGISNQuery
 
@@ -14,13 +15,12 @@ class RealNominativeQuery(BaseNominativeQuery):
       }
 
       headers = {
-        "User-Agent": "TamaApp/1.0 (eshalev@redhat.com)",
-        "Referer": "https://github.com/elai-shalev/TamaOd"
+        "User-Agent": os.getenv('USER_AGENT'),
+        "Referer": os.getenv('REFERRER')
       }
 
       try:
         response = requests.get(url, params=params, headers=headers, timeout=5)
-
         response.raise_for_status()
         data = response.json()
         places = {}
