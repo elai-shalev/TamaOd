@@ -2,6 +2,7 @@ import requests
 import json
 import os
 from django.http import JsonResponse
+import httpx
 from api.services.base import BaseNominativeQuery, BaseGISNQuery
 
 class RealNominativeQuery(BaseNominativeQuery):
@@ -20,7 +21,7 @@ class RealNominativeQuery(BaseNominativeQuery):
       }
 
       try:
-        response = requests.get(url, params=params, headers=headers, timeout=5)
+        response = httpx.get(url, params=params, headers=headers, timeout=5)
         response.raise_for_status()
         data = response.json()
         places = {}
@@ -31,6 +32,8 @@ class RealNominativeQuery(BaseNominativeQuery):
 
         if len(places) == 0:
             return JsonResponse({"error": "could not locate address"}, status=500)
+
+        # returns a single tuple or (lon, lat)
         return places[0]
 
       except requests.RequestException as e:
@@ -99,7 +102,7 @@ class RealGISNQuery(BaseGISNQuery):
         }
 
         try:
-          response = requests.get(url, params=params, headers=headers)
+          response = httpx.get(url, params=params, headers=headers)
           data = response.json()
           return data.get("features", [])
         except requests.RequestException as e:
