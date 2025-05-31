@@ -1,35 +1,59 @@
 document.addEventListener("DOMContentLoaded", function () {
     const streetSelect = document.getElementById('street-select');
+    const devResponseBox = document.getElementById("dev-response");
+    const toggleDevViewButton = document.getElementById("toggleDevView");
 
-    // Fetch streets from the server
+    // --- Dev View Control Setup ---
+    // Initially hide the dev response box
+    devResponseBox.classList.add("dev-response-hidden");
+    devResponseBox.classList.remove("dev-response-visible"); // Ensure it doesn't have the visible class
+    toggleDevViewButton.textContent = "Expand Dev View"; // Set initial button text
+
+    // Add event listener to toggle the dev view
+    toggleDevViewButton.addEventListener("click", function() {
+        if (devResponseBox.classList.contains("dev-response-hidden")) {
+            // If currently hidden, show it
+            devResponseBox.classList.remove("dev-response-hidden");
+            devResponseBox.classList.add("dev-response-visible");
+            toggleDevViewButton.textContent = "Collapse Dev View";
+        } else {
+            // If currently visible, hide it
+            devResponseBox.classList.remove("dev-response-visible");
+            devResponseBox.classList.add("dev-response-hidden");
+            toggleDevViewButton.textContent = "Expand Dev View";
+        }
+    });
+    // --- End Dev View Control Setup ---
+
+    // Fetch streets from the server (your existing code)
     fetch('/api/streets/')
         .then(response => response.json())
         .then(data => {
             const streets = data.streets || [];
-
             // Function to update the dropdown options based on filtered streets
-            function updateStreetOptions(filteredStreets) {
+            function updateStreetOptions(filteredStreets) { // Corrected parameter name
                 // Clear current options
                 streetSelect.innerHTML = '<option value="">Select a street</option>';
-
                 // Append the filtered streets
-                filteredStreets.forEach(street => {
+                filteredStreets.forEach(street => { // <-- THIS LINE WAS THE TYPO
                     const option = document.createElement('option');
                     option.value = street;
                     option.textContent = street;
                     streetSelect.appendChild(option);
                 });
             }
-
             // Initial population of all streets
             updateStreetOptions(streets);
-
         })
         .catch(error => {
             console.error('Error fetching streets:', error);
+            // Optionally, show error in dev response box if it's meant to capture all errors
+            devResponseBox.innerText = `Error fetching streets: ${error.message || error}`;
+            devResponseBox.classList.remove("dev-response-hidden"); // Make visible if there's an error
+            devResponseBox.classList.add("dev-response-visible");
+            toggleDevViewButton.textContent = "Collapse Dev View"; // Update button text
         });
 });
-
 
 // COMBINED EVENT LISTENER FOR FORM SUBMISSION
 document.getElementById("addressForm").addEventListener("submit", function (event) {
@@ -39,13 +63,20 @@ document.getElementById("addressForm").addEventListener("submit", function (even
     const houseNumber = document.getElementById("houseNumber").value;
     const radius = document.getElementById("radius").value;
 
-    const devResponseBox = document.getElementById("dev-response"); // Get dev box
-    const cityMapBox = document.getElementById("city-map"); // Get the map container
+    const devResponseBox = document.getElementById("dev-response");
+    const toggleDevViewButton = document.getElementById("toggleDevView");
+    const cityMapBox = document.getElementById("city-map");
+
+    // --- Reset Dev View on new Submission ---
+    // Hide the dev response box and reset button text when a new search begins
+    devResponseBox.classList.remove("dev-response-visible");
+    devResponseBox.classList.add("dev-response-hidden");
+    toggleDevViewButton.textContent = "Expand Dev View";
+    // --- End Reset Dev View ---
 
     // Clear previous map/content and show loading state if desired
     cityMapBox.innerHTML = `<div id="map" style="height: 400px;"></div>`;
     cityMapBox.classList.add("visible");
-    devResponseBox.classList.remove("visible"); // Hide dev response initially or clear it
 
     // Initialize map immediately
     const map = L.map('map').setView([32.0699, 34.7735], 16); // Center Tel Aviv
@@ -65,7 +96,6 @@ document.getElementById("addressForm").addEventListener("submit", function (even
         .then(response => response.json())
         .then(data => {
             // Display raw JSON response for dev
-            devResponseBox.classList.add("visible");
             devResponseBox.innerText = JSON.stringify(data, null, 2);
 
             if (!Array.isArray(data) || data.length === 0) {
@@ -113,9 +143,13 @@ document.getElementById("addressForm").addEventListener("submit", function (even
         })
         .catch(error => {
             console.error("Error fetching data:", error);
-            // Update the map container with an error message, or use an alert
+            // Display error message in the map container (user-facing)
             cityMapBox.innerHTML = `<p style="color: red;">An error occurred. Please try again.</p>`;
-            devResponseBox.classList.add("visible");
+            
+            // Also display error in the dev response box and make it visible
             devResponseBox.innerText = `Error: ${error.message || error}`;
+            devResponseBox.classList.remove("dev-response-hidden");
+            devResponseBox.classList.add("dev-response-visible");
+            toggleDevViewButton.textContent = "Collapse Dev View"; // Update button text
         });
 });
