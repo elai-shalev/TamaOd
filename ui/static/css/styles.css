@@ -8,7 +8,7 @@
 
 body {
 
-  background-image: url('../images/TLV_NEW.jpg');
+  background-image: url('../images/construction.jpg');
   background-size: cover;
   background-position: center center;
   background-attachment: fixed;
@@ -121,6 +121,42 @@ button:hover {
   display: block;
   /* Show when the response is available */
 }
+
+#dev-response {
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-top: 10px;
+  font-family: monospace;
+  white-space: pre-wrap; /* Ensures text wraps and preserves formatting */
+  max-height: 300px;    /* Optional: limits height */
+  overflow-y: auto;    /* Optional: adds scrollbar if content exceeds max-height */
+}
+
+/* This class will hide the div by default */
+.dev-response-hidden {
+  display: none;
+}
+
+/* This class will show the div */
+.dev-response-visible {
+  display: block;
+}
+
+.city-map {
+  margin-top: 20px;
+  padding: 20px;
+  height: 600px; /* must set height! */
+  border-radius: 4px;
+  display: none;
+  /* Hidden by default */
+}
+
+.city-map.visible {
+  display: block;
+  /* Show when the response is available */
+}
+
 
 @media (max-width: 600px) {
   .container {
