@@ -8,12 +8,14 @@
     <link rel="icon" type="image/x-icon" href="ui/static/images/favicon.ico">
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 
 <body>
     <div class="container">
-        <h1>Welcome to Tama Od!</h1>
-        <h3>Tel Aviv is teeming with constuction! Building, renovating, and the most dreaded: Tama-38 project. <br>
+        <h1>Keep asking yourself, Tama Od?</h1>
+        <h3>Tel Aviv is teeming with constuction! New building, renovations, and the most dreaded: Tama-38 projects. <br>
             Have you ever fled your apartmenet just because it was noisy? Gave up on your dream house just because it
             had a permit to renovate? <br> <br>
             TamaOd will let you find construction projects near your address
@@ -36,12 +38,11 @@
             <button type="submit" class="btn-submit">Analyze Address</button>
         </form>
 
-        <div id="user-response" class="response-box">
-            <!-- The server response will be displayed here -->
-        </div>
-        <div id="dev-response" class="response-box">
-            <!-- The server response will be displayed here -->
-        </div>
+
+        <div id="city-map" class="city-map" style="height: 600px;"></div>
+
+        <div id="dev-response" class="dev-response-hidden">
+            </div>
 
     </div>
 
