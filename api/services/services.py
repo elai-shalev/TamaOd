@@ -36,7 +36,7 @@ def risk_assessment(dangerous_places):
                 dangerous_results.append({
                     "attributes": attributes,
                     "geometry": {
-                        "rings": converted_rings 
+                        "rings": converted_rings
                     }
                 })
     return dangerous_results
