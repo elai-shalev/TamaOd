@@ -1,4 +1,3 @@
-import requests
 import json
 import os
 from django.http import JsonResponse
@@ -36,7 +35,7 @@ class RealNominativeQuery(BaseNominativeQuery):
         # returns a single tuple or (lon, lat)
         return places[0]
 
-      except requests.RequestException as e:
+      except httpx.RequestError as e:
         return JsonResponse({"error": str(e)}, status=500, safe=False)
 
 class RealGISNQuery(BaseGISNQuery):
@@ -105,5 +104,5 @@ class RealGISNQuery(BaseGISNQuery):
           response = httpx.get(url, params=params, headers=headers)
           data = response.json()
           return data.get("features", [])
-        except requests.RequestException as e:
+        except httpx.RequestError as e:
           return JsonResponse({"error": str(e)}, status=500, safe=False)

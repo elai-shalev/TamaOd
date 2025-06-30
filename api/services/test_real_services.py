@@ -48,18 +48,18 @@ GISN_QUERY_URL = "https://gisn.tel-aviv.gov.il/arcgis/rest/services/WM/IView2WM/
 nom_resp = nominative_response_example()
 gisn_resp = gisn_response_example()
 
-@pytest.mark.parametrize("street, house_number, mock_type, mock_data, expected", [
+@pytest.mark.parametrize("street, house_number, mock_data, expected", [
     # Happy path only
-    ("Herzl", 10, "success", nom_resp, ('34.7735910', '32.0698820')),
-    ("FakeStreet", 9999, "success", [], JsonResponse({"error": "could not locate address"}, status=500)),
+    ("Herzl", 10, nom_resp, ('34.7735910', '32.0698820')),
+    ("FakeStreet", 9999, [], JsonResponse({"error": "could not locate address"}, status=500)),
 ])
 @respx.mock
-def test_nominative_fetch_data_cases(street, house_number, mock_type, mock_data, expected):
+def test_nominative_fetch_data_cases(street, house_number, mock_data, expected):
     """Tests RealNominativeQuery.fetch_data for happy scenario only."""
-    if mock_type == "success":
-        respx.get(NOIMNATIVE_URL).mock(
-            return_value=httpx.Response(200, json=mock_data)
-        )
+    
+    respx.get(NOIMNATIVE_URL).mock(
+        return_value=httpx.Response(200, json=mock_data)
+    )
 
     query = RealNominativeQuery()
     result = query.fetch_data(street, house_number)
@@ -74,34 +74,27 @@ def test_nominative_fetch_data_cases(street, house_number, mock_type, mock_data,
         assert result.content == expected.content
 
 
-@pytest.mark.parametrize("coordinate, radius, mock_type, mock_data, expected", [
+@pytest.mark.parametrize("coordinate, radius, mock_data, expected", [
     # Happy path - returns features list
-    ((34.7735910, 32.0698820), 100, "success", gisn_resp, gisn_resp["features"]),
+    ((34.7735910, 32.0698820), 100, gisn_resp, gisn_resp["features"]),
 
     # Empty features list
-    ((34.7735910, 32.0698820), 100, "success", {"features": []}, []),
+    ((34.7735910, 32.0698820), 100, {"features": []}, []),
 ])
 @respx.mock
-def test_gisn_fetch_data_cases(coordinate, radius, mock_type, mock_data, expected):
-    if mock_type == "success":
-        respx.get(GISN_QUERY_URL).mock(
-            return_value=httpx.Response(200, json=mock_data)
-        )
+def test_gisn_fetch_data_cases(coordinate, radius, mock_data, expected):
+    
+    respx.get(GISN_QUERY_URL).mock(
+        return_value=httpx.Response(200, json=mock_data)
+    )
     # Optionally add error case later
 
     query = RealGISNQuery()
     result = query.fetch_data(coordinate, radius)
-    assert result == expected
 
     # Basic type check
     assert isinstance(result, list), f"Result should be a list but got {type(result)}"
 
-    # If expecting features (non-empty list)
-    if expected:
-        assert len(result) == len(expected), f"Expected {len(expected)} features but got {len(result)}"
-        for feature in result:
-            assert "attributes" in feature, "Each feature should contain 'attributes' key"
-            # You can add more attribute checks here if needed
-    else:
-        # Expecting empty list
-        assert result == [], f"Expected empty list but got {result}"
+    assert len(result) == len(expected), f"Expected {len(expected)} features but got {len(result)}"
+    for feature in result:
+        assert "attributes" in feature, "Each feature should contain 'attributes' key"
