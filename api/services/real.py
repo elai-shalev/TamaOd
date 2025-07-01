@@ -4,7 +4,6 @@ from django.http import JsonResponse
 import httpx
 from api.services.base import BaseNominativeQuery, BaseGISNQuery
 from httpx import HTTPStatusError, RequestError
-from json import JSONDecodeError
 
 class RealNominativeQuery(BaseNominativeQuery):
 
@@ -46,7 +45,7 @@ class RealNominativeQuery(BaseNominativeQuery):
           return JsonResponse({"error": "No valid lat/lon found in Nominatim results"}, status=500)
 
       return places[0]
-    
+
 
 class RealGISNQuery(BaseGISNQuery):
     """Real API implementation."""
@@ -124,6 +123,6 @@ class RealGISNQuery(BaseGISNQuery):
 
         except httpx.RequestError as e:
             return JsonResponse(
-                {"error": f"GISN API request failed: {str(e)}"},
+                {"error": f"GISN API request failed:  {e!s}"},
                 status=503
             )

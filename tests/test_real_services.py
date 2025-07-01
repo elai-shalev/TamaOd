@@ -48,8 +48,6 @@ GISN_QUERY_URL = "https://gisn.tel-aviv.gov.il/arcgis/rest/services/WM/IView2WM/
 nom_resp = nominative_response_example()
 gisn_resp = gisn_response_example()
 
-import json
-from unittest.mock import patch
 
 @pytest.mark.parametrize("street, house_number, mock_type, mock_data, expected", [
     # ✅ Happy path - valid response
