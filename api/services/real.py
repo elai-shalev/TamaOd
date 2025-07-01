@@ -3,6 +3,8 @@ import os
 from django.http import JsonResponse
 import httpx
 from api.services.base import BaseNominativeQuery, BaseGISNQuery
+from httpx import HTTPStatusError, RequestError
+from json import JSONDecodeError
 
 class RealNominativeQuery(BaseNominativeQuery):
 
@@ -20,23 +22,31 @@ class RealNominativeQuery(BaseNominativeQuery):
       }
 
       try:
-        response = httpx.get(url, params=params, headers=headers, timeout=5)
-        response.raise_for_status()
-        data = response.json()
-        places = {}
-        for i, place in enumerate(data):
-            lat = place.get('lat')
-            lon = place.get('lon')
-            places[i] = (lon, lat)
+          response = httpx.get(url, params=params, headers=headers, timeout=5)
+          response.raise_for_status()
+          data = response.json()
+      except HTTPStatusError as e:
+          return JsonResponse({"error": f"Nominatim API error: {e.response.status_code} {e.response.reason_phrase}"}, status=e.response.status_code)
+      except RequestError:
+          return JsonResponse({"error": "Nominatim request failed"}, status=500)
+      except (ValueError, TypeError):
+          return JsonResponse({"error": "Invalid JSON response from Nominatim"}, status=500)
 
-        if len(places) == 0:
-            return JsonResponse({"error": "could not locate address"}, status=500)
+      if not data:
+          return JsonResponse({"error": "could not locate address"}, status=500)
 
-        # returns a single tuple or (lon, lat)
-        return places[0]
+      # collect all places
+      places = {
+          i: (place.get('lon'), place.get('lat'))
+          for i, place in enumerate(data)
+          if place.get('lat') and place.get('lon')
+      }
 
-      except httpx.RequestError as e:
-        return JsonResponse({"error": str(e)}, status=500, safe=False)
+      if not places:
+          return JsonResponse({"error": "No valid lat/lon found in Nominatim results"}, status=500)
+
+      return places[0]
+    
 
 class RealGISNQuery(BaseGISNQuery):
     """Real API implementation."""
@@ -101,8 +111,19 @@ class RealGISNQuery(BaseGISNQuery):
         }
 
         try:
-          response = httpx.get(url, params=params, headers=headers)
-          data = response.json()
-          return data.get("features", [])
+            response = httpx.get(url, params=params, headers=headers)
+
+            if response.status_code != 200:
+                return JsonResponse(
+                    {"error": f"GISN API error: {response.status_code} {response.text}"},
+                    status=response.status_code
+                )
+
+            data = response.json()
+            return data.get("features", [])
+
         except httpx.RequestError as e:
-          return JsonResponse({"error": str(e)}, status=500, safe=False)
+            return JsonResponse(
+                {"error": f"GISN API request failed: {str(e)}"},
+                status=503
+            )
