@@ -80,7 +80,7 @@ function initializeMap() {
     const cityMapBox = document.getElementById("city-map");
     
     // Clear previous content and show loading state
-    cityMapBox.innerHTML = `<div id="map" style="height: 400px;"></div>`;
+    cityMapBox.innerHTML = `<div id="map"></div>`;
     cityMapBox.classList.add("visible");
     
     // Initialize map

@@ -157,6 +157,11 @@ button:hover {
   /* Show when the response is available */
 }
 
+#map {
+  height: 100%; /* Use full container height */
+  width: 100%;
+}
+
 
 @media (max-width: 600px) {
   .container {
