@@ -44,7 +44,7 @@ class RealNominativeQuery(BaseNominativeQuery):
       if not places:
           return JsonResponse({"error": "No valid lat/lon found in Nominatim results"}, status=500)
 
-      return places[0]
+      return next(iter(places.values()))  # Get first available coordinates
 
 
 class RealGISNQuery(BaseGISNQuery):
