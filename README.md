@@ -10,4 +10,8 @@ Set the enviroment (production / test) before starting up the application
 To run this app:
 ```pdm run manage.py runserver```
 
-To change app_state to use mock apis - Uncomment the API varaibles in tamaod/settings.py
+## Testing and Mocking
+
+To change app_state to use mock apis - Uncomment the API variables in tamaod/settings.py
+
+To run tests, run `pytest` from the project root.
