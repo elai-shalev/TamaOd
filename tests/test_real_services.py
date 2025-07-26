@@ -150,7 +150,7 @@ def test_gisn_fetch_data_cases(coordinate, radius, mock_type, mock_data, expecte
         assert result == expected
 
 
-@respx.mock  
+@respx.mock
 def test_nominative_no_coordinates_in_response():
     """Test when Nominatim returns data but no valid lat/lon coordinates"""
     mock_response = [{
@@ -158,12 +158,12 @@ def test_nominative_no_coordinates_in_response():
         'display_name': 'Some Place',
         # Missing 'lat' and 'lon' fields
     }]
-    
+
     respx.get(NOIMNATIVE_URL).mock(return_value=httpx.Response(200, json=mock_response))
-    
+
     query = RealNominativeQuery()
     result = query.fetch_data("TestStreet", 123)
-    
+
     assert isinstance(result, JsonResponse)
     assert result.status_code == 500
     assert b"No valid lat/lon found in Nominatim results" in result.content
@@ -173,12 +173,12 @@ def test_nominative_no_coordinates_in_response():
 def test_gisn_missing_features_key():
     """Test when GISN API returns 200 but response doesn't have 'features' key"""
     mock_response = {"some_other_key": "value"}  # Missing 'features' key
-    
+
     respx.get(GISN_QUERY_URL).mock(return_value=httpx.Response(200, json=mock_response))
-    
+
     query = RealGISNQuery()
     result = query.fetch_data((34.7735910, 32.0698820), 100)
-    
+
     # Should return empty list when 'features' key is missing
     assert isinstance(result, list)
     assert result == []
@@ -200,11 +200,11 @@ def test_nominative_partial_coordinates():
             'display_name': 'Place with coords',
         }
     ]
-    
+
     respx.get(NOIMNATIVE_URL).mock(return_value=httpx.Response(200, json=mock_response))
-    
+
     query = RealNominativeQuery()
     result = query.fetch_data("TestStreet", 123)
-    
+
     # Should return the first valid coordinate pair (skips invalid first result)
     assert result == ('34.7735910', '32.0698820')
