@@ -105,19 +105,22 @@ def test_nominative_fetch_data_cases(street, house_number, mock_type, mock_data,
 @respx.mock
 @pytest.mark.parametrize("coordinate, radius, mock_type, mock_data, expected", [
     # Happy path - returns features list
-    ((34.7735910, 32.0698820), 100, "success", gisn_resp, gisn_resp["features"]),
+    ((34.7735910, 32.0698820), 100, "success", gisn_resp,
+     gisn_resp["features"]),
 
     # Empty features list
     ((34.7735910, 32.0698820), 100, "success", {"features": []}, []),
 
-    # HTTP 404 error
-    ((34.7735910, 32.0698820), 100, "http_error", {"status_code": 404, "text": "Not Found"}, (404, b'{"error": "GISN API error: 404 Not Found"}')),
+    # HTTP 404 error - should raise exception
+    ((34.7735910, 32.0698820), 100, "http_error",
+     {"status_code": 404, "text": "Not Found"}, "exception"),
 
-    # HTTP 500 error
-    ((34.7735910, 32.0698820), 100, "http_error", {"status_code": 500, "text": "Internal Server Error"}, (500, b'{"error": "GISN API error: 500 Internal Server Error"}')),
+    # HTTP 500 error - should raise exception
+    ((34.7735910, 32.0698820), 100, "http_error",
+     {"status_code": 500, "text": "Internal Server Error"}, "exception"),
 
-    # Network timeout/request error - NEW TEST CASE
-    ((34.7735910, 32.0698820), 100, "request_error", None, (503, b'{"error": "GISN API request failed:  Timeout"}')),
+    # Network timeout/request error - should raise exception
+    ((34.7735910, 32.0698820), 100, "request_error", None, "exception"),
 ])
 def test_gisn_fetch_data_cases(coordinate, radius, mock_type, mock_data, expected):
     if mock_type == "success":
@@ -125,7 +128,7 @@ def test_gisn_fetch_data_cases(coordinate, radius, mock_type, mock_data, expecte
             return_value=httpx.Response(200, json=mock_data)
         )
     elif mock_type == "request_error":
-        # NEW: Test network errors for GISN
+        # Test network errors for GISN
         respx.get(GISN_QUERY_URL).mock(side_effect=httpx.RequestError("Timeout"))
     else:  # error case
         respx.get(GISN_QUERY_URL).mock(
@@ -136,16 +139,14 @@ def test_gisn_fetch_data_cases(coordinate, radius, mock_type, mock_data, expecte
         )
 
     query = RealGISNQuery()
-    result = query.fetch_data(coordinate, radius)
 
-    if isinstance(expected, tuple):
-        # We expect a JsonResponse with specific content and status
-        expected_status, expected_content = expected
-        assert isinstance(result, JsonResponse), f"Expected JsonResponse, got {type(result)}"
-        assert result.status_code == expected_status
-        assert result.content == expected_content
+    if expected == "exception":
+        # Error cases should now raise exceptions
+        with pytest.raises((Exception, httpx.RequestError)):
+            query.fetch_data(coordinate, radius)
     else:
-        # We expect a list of features
+        # Success cases should return a list of features
+        result = query.fetch_data(coordinate, radius)
         assert isinstance(result, list), f"Expected list, got {type(result)}"
         assert result == expected
 

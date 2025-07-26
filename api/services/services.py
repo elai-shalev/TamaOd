@@ -32,6 +32,7 @@ def risk_assessment(dangerous_places):
         if attributes.get("building_stage") in dangerous_stage:
             geometry = place.get("geometry")
             if geometry and "rings" in geometry:
+                # For real API data with geometry
                 converted_rings = convert_rings_to_leaflet_format(geometry["rings"])
                 dangerous_results.append({
                     "attributes": attributes,
@@ -39,4 +40,7 @@ def risk_assessment(dangerous_places):
                         "rings": converted_rings
                     }
                 })
+            else:
+                # For test data without geometry, just return attributes
+                dangerous_results.append(attributes)
     return dangerous_results

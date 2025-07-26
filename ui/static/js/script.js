@@ -98,8 +98,6 @@ function initializeMap() {
 
 function addRadiusCircle(map, center, radiusInMeters) {
     // Add a gray circle to show the search radius
-    console.log("Creating circle at:", center, "with radius:", radiusInMeters, "meters");
-    
     const radiusCircle = L.circle(center, {
         color: '#333333',
         fillColor: '#888888',
@@ -107,13 +105,6 @@ function addRadiusCircle(map, center, radiusInMeters) {
         weight: 1,
         radius: radiusInMeters
     }).addTo(map);
-    
-    // Add popup to circle for debugging
-    radiusCircle.bindPopup(`Search radius: ${radiusInMeters}m<br>Center: ${center[0].toFixed(4)}, ${center[1].toFixed(4)}`);
-    
-    // Ensure the circle is in view
-    const bounds = radiusCircle.getBounds();
-    console.log("Circle bounds:", bounds);
     
     return radiusCircle;
 }
@@ -130,11 +121,6 @@ function calculatePolygonCenter(data) {
                 ring.forEach((point, index) => {
                     // Ensure we have valid coordinates
                     if (Array.isArray(point) && point.length >= 2) {
-                        // Debug: log first few points to see coordinate format
-                        if (pointCount < 3) {
-                            console.log(`Point ${pointCount}:`, point, `[${point[0]}, ${point[1]}]`);
-                        }
-                        
                         totalLat += point[0]; // Latitude (was point[1])
                         totalLng += point[1]; // Longitude (was point[0])
                         pointCount++;
@@ -146,13 +132,10 @@ function calculatePolygonCenter(data) {
     
     if (pointCount > 0) {
         const center = [totalLat / pointCount, totalLng / pointCount];
-        console.log("Calculated center:", center, "from", pointCount, "points");
-        console.log("Center should be around Tel Aviv [32.07, 34.77]");
         return center;
     }
     
     // Fallback to Tel Aviv center if no valid points found
-    console.log("No valid points found, using Tel Aviv center");
     return [32.0699, 34.7735];
 }
 
@@ -203,16 +186,9 @@ function processAnalyzeResponse(data, map, radius) {
     const center = calculatePolygonCenter(data);
     const radiusInMeters = parseInt(radius);
     
-    console.log("Adding radius circle:", {
-        center: center,
-        radius: radiusInMeters,
-        radiusInput: radius
-    });
-    
     let radiusCircle = null;
     if (center && radiusInMeters > 0) {
         radiusCircle = addRadiusCircle(map, center, radiusInMeters);
-        console.log("Radius circle added successfully");
     } else {
         console.error("Invalid center or radius for circle:", center, radiusInMeters);
     }
@@ -233,7 +209,6 @@ function processAnalyzeResponse(data, map, radius) {
             const allFeatures = [...polygons, radiusCircle];
             const group = L.featureGroup(allFeatures);
             map.fitBounds(group.getBounds().pad(0.5));
-            console.log("Map fitted to include radius circle and polygons");
         }
     }
 }
