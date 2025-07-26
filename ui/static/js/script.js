@@ -146,7 +146,7 @@ function addPolygonsToMap(map, data) {
         // Ensure the 'attributes' and 'geometry' exist before accessing
         if (item.attributes && item.geometry && item.geometry.rings) {
             const color = item.attributes.sw_tama_38 === "כן" ? 'red' : 'yellow';
-            const rings = item.geometry.rings;
+            const {rings} = item.geometry;
             
             const polygon = L.polygon(rings, {
                 color: color,
