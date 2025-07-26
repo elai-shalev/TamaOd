@@ -1,155 +1,280 @@
-document.addEventListener("DOMContentLoaded", function () {
-    const streetSelect = document.getElementById('street-select');
+// Dev Response Box Management Functions
+function hideDevResponse() {
     const devResponseBox = document.getElementById("dev-response");
     const toggleDevViewButton = document.getElementById("toggleDevView");
-
-    // --- Dev View Control Setup ---
-    // Initially hide the dev response box
+    
+    devResponseBox.classList.remove("dev-response-visible");
     devResponseBox.classList.add("dev-response-hidden");
-    devResponseBox.classList.remove("dev-response-visible"); // Ensure it doesn't have the visible class
-    toggleDevViewButton.textContent = "Expand Dev View"; // Set initial button text
+    toggleDevViewButton.textContent = "Expand Dev View";
+}
 
-    // Add event listener to toggle the dev view
-    toggleDevViewButton.addEventListener("click", function() {
-        if (devResponseBox.classList.contains("dev-response-hidden")) {
-            // If currently hidden, show it
-            devResponseBox.classList.remove("dev-response-hidden");
-            devResponseBox.classList.add("dev-response-visible");
-            toggleDevViewButton.textContent = "Collapse Dev View";
-        } else {
-            // If currently visible, hide it
-            devResponseBox.classList.remove("dev-response-visible");
-            devResponseBox.classList.add("dev-response-hidden");
-            toggleDevViewButton.textContent = "Expand Dev View";
-        }
+function showDevResponse() {
+    const devResponseBox = document.getElementById("dev-response");
+    const toggleDevViewButton = document.getElementById("toggleDevView");
+    
+    devResponseBox.classList.remove("dev-response-hidden");
+    devResponseBox.classList.add("dev-response-visible");
+    toggleDevViewButton.textContent = "Collapse Dev View";
+}
+
+function toggleDevResponse() {
+    const devResponseBox = document.getElementById("dev-response");
+    
+    if (devResponseBox.classList.contains("dev-response-hidden")) {
+        showDevResponse();
+    } else {
+        hideDevResponse();
+    }
+}
+
+function setDevResponseContent(content) {
+    const devResponseBox = document.getElementById("dev-response");
+    devResponseBox.innerText = content;
+}
+
+// Error Handling Functions
+function handleError(error, userMessage = "An error occurred. Please try again.") {
+    console.error("Error:", error);
+    
+    // Show error in dev response box
+    setDevResponseContent(`Error: ${error.message || error}`);
+    showDevResponse();
+    
+    // Show user-friendly message in map container if it exists
+    const cityMapBox = document.getElementById("city-map");
+    if (cityMapBox && userMessage) {
+        cityMapBox.innerHTML = `<p style="color: red;">${userMessage}</p>`;
+    }
+}
+
+// Street Management Functions
+function updateStreetOptions(streets) {
+    const streetSelect = document.getElementById('street-select');
+    
+    // Clear current options
+    streetSelect.innerHTML = '<option value="">Select a street</option>';
+    
+    // Append the filtered streets
+    streets.forEach(street => {
+        const option = document.createElement('option');
+        option.value = street;
+        option.textContent = street;
+        streetSelect.appendChild(option);
     });
-    // --- End Dev View Control Setup ---
+}
 
-    // Fetch streets from the server (your existing code)
+function loadStreets() {
     fetch('/api/streets/')
         .then(response => response.json())
         .then(data => {
             const streets = data.streets || [];
-            // Function to update the dropdown options based on filtered streets
-            function updateStreetOptions(filteredStreets) { // Corrected parameter name
-                // Clear current options
-                streetSelect.innerHTML = '<option value="">Select a street</option>';
-                // Append the filtered streets
-                filteredStreets.forEach(street => { // <-- THIS LINE WAS THE TYPO
-                    const option = document.createElement('option');
-                    option.value = street;
-                    option.textContent = street;
-                    streetSelect.appendChild(option);
-                });
-            }
-            // Initial population of all streets
             updateStreetOptions(streets);
         })
         .catch(error => {
-            console.error('Error fetching streets:', error);
-            // Optionally, show error in dev response box if it's meant to capture all errors
-            devResponseBox.innerText = `Error fetching streets: ${error.message || error}`;
-            devResponseBox.classList.remove("dev-response-hidden"); // Make visible if there's an error
-            devResponseBox.classList.add("dev-response-visible");
-            toggleDevViewButton.textContent = "Collapse Dev View"; // Update button text
+            handleError(error, null); // No user message needed for street loading
         });
-});
+}
 
-// COMBINED EVENT LISTENER FOR FORM SUBMISSION
-document.getElementById("addressForm").addEventListener("submit", function (event) {
-    event.preventDefault(); // Prevent default form submission
-
-    const street = document.getElementById("street-select").value;
-    const houseNumber = document.getElementById("houseNumber").value;
-    const radius = document.getElementById("radius").value;
-
-    const devResponseBox = document.getElementById("dev-response");
-    const toggleDevViewButton = document.getElementById("toggleDevView");
+// Map Management Functions
+function initializeMap() {
     const cityMapBox = document.getElementById("city-map");
-
-    // --- Reset Dev View on new Submission ---
-    // Hide the dev response box and reset button text when a new search begins
-    devResponseBox.classList.remove("dev-response-visible");
-    devResponseBox.classList.add("dev-response-hidden");
-    toggleDevViewButton.textContent = "Expand Dev View";
-    // --- End Reset Dev View ---
-
-    // Clear previous map/content and show loading state if desired
+    
+    // Clear previous content and show loading state
     cityMapBox.innerHTML = `<div id="map" style="height: 400px;"></div>`;
     cityMapBox.classList.add("visible");
-
-    // Initialize map immediately
+    
+    // Initialize map
     const map = L.map('map').setView([32.0699, 34.7735], 16); // Center Tel Aviv
-
-    // OSM tile layer
+    
+    // Add OSM tile layer
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; OpenStreetMap contributors & CartoDB',
         subdomains: 'abcd',
         maxZoom: 19
     }).addTo(map);
+    
+    return map;
+}
 
+function addRadiusCircle(map, center, radiusInMeters) {
+    // Add a gray circle to show the search radius
+    console.log("Creating circle at:", center, "with radius:", radiusInMeters, "meters");
+    
+    const radiusCircle = L.circle(center, {
+        color: '#333333',
+        fillColor: '#888888',
+        fillOpacity: 0.3,
+        weight: 1,
+        radius: radiusInMeters
+    }).addTo(map);
+    
+    // Add popup to circle for debugging
+    radiusCircle.bindPopup(`Search radius: ${radiusInMeters}m<br>Center: ${center[0].toFixed(4)}, ${center[1].toFixed(4)}`);
+    
+    // Ensure the circle is in view
+    const bounds = radiusCircle.getBounds();
+    console.log("Circle bounds:", bounds);
+    
+    return radiusCircle;
+}
+
+function calculatePolygonCenter(data) {
+    // Calculate the center point of all polygons
+    let totalLat = 0;
+    let totalLng = 0;
+    let pointCount = 0;
+    
+    data.forEach(item => {
+        if (item.geometry && item.geometry.rings) {
+            item.geometry.rings.forEach(ring => {
+                ring.forEach((point, index) => {
+                    // Ensure we have valid coordinates
+                    if (Array.isArray(point) && point.length >= 2) {
+                        // Debug: log first few points to see coordinate format
+                        if (pointCount < 3) {
+                            console.log(`Point ${pointCount}:`, point, `[${point[0]}, ${point[1]}]`);
+                        }
+                        
+                        totalLat += point[0]; // Latitude (was point[1])
+                        totalLng += point[1]; // Longitude (was point[0])
+                        pointCount++;
+                    }
+                });
+            });
+        }
+    });
+    
+    if (pointCount > 0) {
+        const center = [totalLat / pointCount, totalLng / pointCount];
+        console.log("Calculated center:", center, "from", pointCount, "points");
+        console.log("Center should be around Tel Aviv [32.07, 34.77]");
+        return center;
+    }
+    
+    // Fallback to Tel Aviv center if no valid points found
+    console.log("No valid points found, using Tel Aviv center");
+    return [32.0699, 34.7735];
+}
+
+function addPolygonsToMap(map, data) {
+    const addedPolygons = [];
+    
+    data.forEach(item => {
+        // Ensure the 'attributes' and 'geometry' exist before accessing
+        if (item.attributes && item.geometry && item.geometry.rings) {
+            const color = item.attributes.sw_tama_38 === "כן" ? 'red' : 'yellow';
+            const rings = item.geometry.rings;
+            
+            const polygon = L.polygon(rings, {
+                color: color,
+                fillColor: color,
+                fillOpacity: 0.5,
+                weight: 2
+            })
+            .addTo(map)
+            .bindPopup(`${item.attributes.addresses}<br>Tama 38: ${item.attributes.sw_tama_38}`);
+            
+            addedPolygons.push(polygon);
+        } else {
+            console.warn("Skipping item due to missing attributes or geometry:", item);
+        }
+    });
+    
+    // Zoom or fit map to all polygons
+    if (addedPolygons.length > 0) {
+        const polygonGroup = L.featureGroup(addedPolygons);
+        map.fitBounds(polygonGroup.getBounds().pad(0.5));
+    } else {
+        alert("No valid polygons found in the response to display.");
+    }
+}
+
+// Form Processing Functions
+function processAnalyzeResponse(data, map, radius) {
+    // Display raw JSON response for dev
+    setDevResponseContent(JSON.stringify(data, null, 2));
+    
+    if (!Array.isArray(data) || data.length === 0) {
+        alert("No problematic addresses found nearby.");
+        return;
+    }
+    
+    // Add radius circle first (so it appears behind polygons)
+    const center = calculatePolygonCenter(data);
+    const radiusInMeters = parseInt(radius);
+    
+    console.log("Adding radius circle:", {
+        center: center,
+        radius: radiusInMeters,
+        radiusInput: radius
+    });
+    
+    let radiusCircle = null;
+    if (center && radiusInMeters > 0) {
+        radiusCircle = addRadiusCircle(map, center, radiusInMeters);
+        console.log("Radius circle added successfully");
+    } else {
+        console.error("Invalid center or radius for circle:", center, radiusInMeters);
+    }
+    
+    // Add polygons to map
+    addPolygonsToMap(map, data);
+    
+    // Fit map to show both polygons and radius circle
+    if (radiusCircle) {
+        const polygons = [];
+        data.forEach(item => {
+            if (item.attributes && item.geometry && item.geometry.rings) {
+                polygons.push(L.polygon(item.geometry.rings));
+            }
+        });
+        
+        if (polygons.length > 0) {
+            const allFeatures = [...polygons, radiusCircle];
+            const group = L.featureGroup(allFeatures);
+            map.fitBounds(group.getBounds().pad(0.5));
+            console.log("Map fitted to include radius circle and polygons");
+        }
+    }
+}
+
+function submitAddressForm(event) {
+    event.preventDefault();
+    
+    const street = document.getElementById("street-select").value;
+    const houseNumber = document.getElementById("houseNumber").value;
+    const radius = document.getElementById("radius").value;
+    
+    // Reset dev view on new submission
+    hideDevResponse();
+    
+    // Initialize map
+    const map = initializeMap();
+    
+    // Fetch and process data
     fetch('/api/analyze/', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ street: street, houseNumber: houseNumber, radius: radius }),
     })
-        .then(response => response.json())
-        .then(data => {
-            // Display raw JSON response for dev
-            devResponseBox.innerText = JSON.stringify(data, null, 2);
+    .then(response => response.json())
+    .then(data => processAnalyzeResponse(data, map, radius))
+    .catch(error => handleError(error));
+}
 
-            if (!Array.isArray(data) || data.length === 0) {
-                alert("No problematic addresses found nearby."); // Use alert or update a specific message div
-                // Optional: clear map or display a message on the map container
-                // map.remove(); // if you want to completely remove the map if no results
-                // cityMapBox.innerHTML = "<p>No problematic addresses found.</p>";
-                return;
-            }
-
-            const addedPolygons = []; // Array to store polygon objects for fitBounds
-
-            // Add polygons to the map based on backend response
-            data.forEach(item => {
-                // Ensure the 'attributes' and 'geometry' exist before accessing
-                if (item.attributes && item.geometry && item.geometry.rings) {
-                    const color = item.attributes.sw_tama_38 === "כן" ? 'red' : 'yellow';
-                    const rings = item.geometry.rings;
-
-                    const polygon = L.polygon(rings, {
-                        color: color,
-                        fillColor: color,
-                        fillOpacity: 0.5,
-                        weight: 2
-                    })
-                    .addTo(map)
-                    .bindPopup(`${item.attributes.addresses}<br>Tama 38: ${item.attributes.sw_tama_38}`);
-
-                    addedPolygons.push(polygon); // Store the created polygon
-                } else {
-                    console.warn("Skipping item due to missing attributes or geometry:", item);
-                }
-            });
-
-            // Zoom or fit map to all polygons
-            if (addedPolygons.length > 0) {
-                const polygonGroup = L.featureGroup(addedPolygons);
-                map.fitBounds(polygonGroup.getBounds().pad(0.5));
-            } else {
-                // If data was not empty but no polygons were added (e.g., due to filtering/missing data)
-                alert("No valid polygons found in the response to display.");
-            }
-
-
-        })
-        .catch(error => {
-            console.error("Error fetching data:", error);
-            // Display error message in the map container (user-facing)
-            cityMapBox.innerHTML = `<p style="color: red;">An error occurred. Please try again.</p>`;
-            
-            // Also display error in the dev response box and make it visible
-            devResponseBox.innerText = `Error: ${error.message || error}`;
-            devResponseBox.classList.remove("dev-response-hidden");
-            devResponseBox.classList.add("dev-response-visible");
-            toggleDevViewButton.textContent = "Collapse Dev View"; // Update button text
-        });
+// Main Initialization
+document.addEventListener("DOMContentLoaded", function () {
+    const toggleDevViewButton = document.getElementById("toggleDevView");
+    
+    // Initialize dev view
+    hideDevResponse();
+    
+    // Set up dev view toggle
+    toggleDevViewButton.addEventListener("click", toggleDevResponse);
+    
+    // Load streets
+    loadStreets();
+    
+    // Set up form submission
+    document.getElementById("addressForm").addEventListener("submit", submitAddressForm);
 });
