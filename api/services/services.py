@@ -1,5 +1,6 @@
 from api import app_state
 
+
 def handle_address(street, house_number, radius):
     """
     Returns dangerous places near a given address.
@@ -24,7 +25,7 @@ def convert_rings_to_leaflet_format(rings):
 
 
 def risk_assessment(dangerous_places):
-    """Filter dangerous places, convert their geometry, and return relevant data for the frontend."""
+    """Filter dangerous places, convert geometry, return relevant data."""
     dangerous_results = []
     dangerous_stage = ["בבניה"]
 
@@ -34,7 +35,8 @@ def risk_assessment(dangerous_places):
             geometry = place.get("geometry")
             if geometry and "rings" in geometry:
                 # For real API data with geometry
-                converted_rings = convert_rings_to_leaflet_format(geometry["rings"])
+                rings = geometry["rings"]
+                converted_rings = convert_rings_to_leaflet_format(rings)
                 dangerous_results.append({
                     "attributes": attributes,
                     "geometry": {
@@ -42,6 +44,6 @@ def risk_assessment(dangerous_places):
                     }
                 })
             else:
-                # For test data without geometry, just return attributes
+                # For test data without geometry, return attributes
                 dangerous_results.append(attributes)
     return dangerous_results

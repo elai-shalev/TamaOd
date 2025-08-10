@@ -188,7 +188,10 @@ function processAnalyzeResponse(data, map, radius) {
     
     let radiusCircle = null;
     if (center && radiusInMeters > 0) {
-        radiusCircle = addRadiusCircle(map, center, radiusInMeters);
+        // UPDATED: Make the radius circle much larger to encompass all addresses
+        // Triple the size to ensure all addresses are definitely within the circle
+        const displayRadius = Math.round(radiusInMeters * 1.5);
+        radiusCircle = addRadiusCircle(map, center, displayRadius);
     } else {
         console.error("Invalid center or radius for circle:", center, radiusInMeters);
     }
