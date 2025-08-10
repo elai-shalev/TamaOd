@@ -9,6 +9,7 @@ import os
 os.environ['USER_AGENT'] = 'test-agent'
 os.environ['REFERRER'] = 'http://test-referrer'
 
+
 def nominative_response_example():
     return [{
         'place_id': 194616086,
@@ -27,128 +28,146 @@ def nominative_response_example():
         'boundingbox': ['32.0698320', '32.0699320', '34.7735410', '34.7736410']
     }]
 
+
 def gisn_response_example():
     return {
         'features': [
-        {'attributes': {'addresses': 'מרכז בעלי מלאכה 19א', 'building_stage': 'קיים היתר', 'sw_tama_38': 'כן'}},
-        {'attributes': {'addresses': 'מרכז בעלי מלאכה 30', 'building_stage': 'בתהליך היתר', 'sw_tama_38': 'כן'}},
-        {'attributes': {'addresses': 'העבודה 19', 'building_stage': 'בתהליך היתר', 'sw_tama_38': 'כן'}},
-        {'attributes': {'addresses': 'מרכז בעלי מלאכה 25', 'building_stage': 'קיימת לפחות תעודת גמר אחת', 'sw_tama_38': 'לא'}},
-        {'attributes': {'addresses': 'מרכז בעלי מלאכה 36א', 'building_stage': 'בתהליך היתר', 'sw_tama_38': 'כן'}},
-        {'attributes': {'addresses': 'שינקין מנחם 32', 'building_stage': 'בתהליך היתר', 'sw_tama_38': 'לא'}},
-        {'attributes': {'addresses': 'מרכז בעלי מלאכה 25', 'building_stage': 'קיימת לפחות תעודת גמר אחת', 'sw_tama_38': 'לא'}},
+            {
+                'attributes': {
+                    'addresses': 'מרכז בעלי מלאכה 19א',
+                    'building_stage': 'קיים היתר',
+                    'sw_tama_38': 'כן'
+                }
+            },
+            {
+                'attributes': {
+                    'addresses': 'מרכז בעלי מלאכה 30',
+                    'building_stage': 'בתהליך היתר',
+                    'sw_tama_38': 'כן'
+                }
+            },
+            {
+                'attributes': {
+                    'addresses': 'העבודה 19',
+                    'building_stage': 'בתהליך היתר',
+                    'sw_tama_38': 'כן'
+                }
+            },
+            {
+                'attributes': {
+                    'addresses': 'מרכז בעלי מלאכה 25',
+                    'building_stage': 'קיימת לפחות תעודת גמר אחת',
+                    'sw_tama_38': 'לא'
+                }
+            },
+            {
+                'attributes': {
+                    'addresses': 'מרכז בעלי מלאכה 36א',
+                    'building_stage': 'בתהליך היתר',
+                    'sw_tama_38': 'כן'
+                }
+            },
+            {
+                'attributes': {
+                    'addresses': 'שינקין מנחם 32',
+                    'building_stage': 'בתהליך היתר',
+                    'sw_tama_38': 'לא'
+                }
+            },
+            {
+                'attributes': {
+                    'addresses': 'מרכז בעלי מלאכה 25',
+                    'building_stage': 'קיימת לפחות תעודת גמר אחת',
+                    'sw_tama_38': 'לא'
+                }
+            },
         ]
     }
 
 
-
-# global setup for all tests
+# Global setup for all tests
 NOIMNATIVE_URL = "https://nominatim.openstreetmap.org/search"
-GISN_QUERY_URL = "https://gisn.tel-aviv.gov.il/arcgis/rest/services/WM/IView2WM/MapServer/772/query"
-nom_resp = nominative_response_example()
-gisn_resp = gisn_response_example()
+GISN_QUERY_URL = ("https://gisn.tel-aviv.gov.il/arcgis/rest/services/"
+                  "WM/IView2WM/MapServer/772/query")
 
 
-@pytest.mark.parametrize("street, house_number, mock_type, mock_data, expected", [
-    # ✅ Happy path - valid response
-    ("Herzl", 10, "success", nom_resp, ('34.7735910', '32.0698820')),
+# Nominative Query Tests
 
-    # ❌ No results found
-    ("FakeStreet", 9999, "success", [], JsonResponse({"error": "could not locate address"}, status=500)),
-
-    # ❌ HTTP 500 error from Nominatim
-    ("BuggyStreet", 1, "http_error", {"status_code": 500, "text": "Internal Server Error"},
-     JsonResponse({"error": "Nominatim API error: 500 Internal Server Error"}, status=500)),
-
-    # ❌ Malformed JSON (e.g. invalid syntax)
-    ("CorruptStreet", 2, "invalid_json", None,
-     JsonResponse({"error": "Invalid JSON response from Nominatim"}, status=500)),
-
-    # ❌ Request timeout or network error
-    ("TimeoutStreet", 3, "timeout", None,
-     JsonResponse({"error": "Nominatim request failed"}, status=500)),
-])
 @respx.mock
-def test_nominative_fetch_data_cases(street, house_number, mock_type, mock_data, expected):
-    if mock_type == "success":
-        respx.get(NOIMNATIVE_URL).mock(return_value=httpx.Response(200, json=mock_data))
-
-    elif mock_type == "http_error":
-        respx.get(NOIMNATIVE_URL).mock(
-            return_value=httpx.Response(
-                status_code=mock_data["status_code"],
-                text=mock_data["text"]
-            )
-        )
-
-    elif mock_type == "invalid_json":
-        respx.get(NOIMNATIVE_URL).mock(
-            return_value=httpx.Response(200, content=b"{ not valid json")
-        )
-
-    elif mock_type == "timeout":
-        respx.get(NOIMNATIVE_URL).mock(side_effect=httpx.RequestError("Timeout"))
+def test_nominative_fetch_data_success():
+    """Test successful Nominatim query with valid response"""
+    mock_response = nominative_response_example()
+    respx.get(NOIMNATIVE_URL).mock(
+        return_value=httpx.Response(200, json=mock_response)
+    )
 
     query = RealNominativeQuery()
-    result = query.fetch_data(street, house_number)
+    result = query.fetch_data("Herzl", 10)
 
-    if isinstance(expected, tuple):
-        # Success case
-        assert result == expected
-    else:
-        # Error case
-        assert isinstance(result, JsonResponse)
-        assert result.status_code == expected.status_code
-        assert result.content == expected.content
+    assert result == ('34.7735910', '32.0698820')
 
 
 @respx.mock
-@pytest.mark.parametrize("coordinate, radius, mock_type, mock_data, expected", [
-    # Happy path - returns features list
-    ((34.7735910, 32.0698820), 100, "success", gisn_resp,
-     gisn_resp["features"]),
+def test_nominative_fetch_data_no_results():
+    """Test Nominatim query when no results are found"""
+    respx.get(NOIMNATIVE_URL).mock(
+        return_value=httpx.Response(200, json=[])
+    )
 
-    # Empty features list
-    ((34.7735910, 32.0698820), 100, "success", {"features": []}, []),
+    query = RealNominativeQuery()
+    result = query.fetch_data("FakeStreet", 9999)
 
-    # HTTP 404 error - should raise exception
-    ((34.7735910, 32.0698820), 100, "http_error",
-     {"status_code": 404, "text": "Not Found"}, "exception"),
+    assert isinstance(result, JsonResponse)
+    assert result.status_code == 500
+    assert b"could not locate address" in result.content
 
-    # HTTP 500 error - should raise exception
-    ((34.7735910, 32.0698820), 100, "http_error",
-     {"status_code": 500, "text": "Internal Server Error"}, "exception"),
 
-    # Network timeout/request error - should raise exception
-    ((34.7735910, 32.0698820), 100, "request_error", None, "exception"),
-])
-def test_gisn_fetch_data_cases(coordinate, radius, mock_type, mock_data, expected):
-    if mock_type == "success":
-        respx.get(GISN_QUERY_URL).mock(
-            return_value=httpx.Response(200, json=mock_data)
+@respx.mock
+def test_nominative_fetch_data_http_error():
+    """Test Nominatim query when HTTP error occurs"""
+    respx.get(NOIMNATIVE_URL).mock(
+        return_value=httpx.Response(
+            status_code=500,
+            text="Internal Server Error"
         )
-    elif mock_type == "request_error":
-        # Test network errors for GISN
-        respx.get(GISN_QUERY_URL).mock(side_effect=httpx.RequestError("Timeout"))
-    else:  # error case
-        respx.get(GISN_QUERY_URL).mock(
-            return_value=httpx.Response(
-                status_code=mock_data["status_code"],
-                text=mock_data["text"]
-            )
-        )
+    )
 
-    query = RealGISNQuery()
+    query = RealNominativeQuery()
+    result = query.fetch_data("BuggyStreet", 1)
 
-    if expected == "exception":
-        # Error cases should now raise exceptions
-        with pytest.raises((Exception, httpx.RequestError)):
-            query.fetch_data(coordinate, radius)
-    else:
-        # Success cases should return a list of features
-        result = query.fetch_data(coordinate, radius)
-        assert isinstance(result, list), f"Expected list, got {type(result)}"
-        assert result == expected
+    assert isinstance(result, JsonResponse)
+    assert result.status_code == 500
+    assert b"Nominatim API error: 500 Internal Server Error" in result.content
+
+
+@respx.mock
+def test_nominative_fetch_data_invalid_json():
+    """Test Nominatim query when response contains invalid JSON"""
+    respx.get(NOIMNATIVE_URL).mock(
+        return_value=httpx.Response(200, content=b"{ not valid json")
+    )
+
+    query = RealNominativeQuery()
+    result = query.fetch_data("CorruptStreet", 2)
+
+    assert isinstance(result, JsonResponse)
+    assert result.status_code == 500
+    assert b"Invalid JSON response from Nominatim" in result.content
+
+
+@respx.mock
+def test_nominative_fetch_data_timeout():
+    """Test Nominatim query when request times out"""
+    respx.get(NOIMNATIVE_URL).mock(
+        side_effect=httpx.RequestError("Timeout")
+    )
+
+    query = RealNominativeQuery()
+    result = query.fetch_data("TimeoutStreet", 3)
+
+    assert isinstance(result, JsonResponse)
+    assert result.status_code == 500
+    assert b"Nominatim request failed" in result.content
 
 
 @respx.mock
@@ -160,7 +179,9 @@ def test_nominative_no_coordinates_in_response():
         # Missing 'lat' and 'lon' fields
     }]
 
-    respx.get(NOIMNATIVE_URL).mock(return_value=httpx.Response(200, json=mock_response))
+    respx.get(NOIMNATIVE_URL).mock(
+        return_value=httpx.Response(200, json=mock_response)
+    )
 
     query = RealNominativeQuery()
     result = query.fetch_data("TestStreet", 123)
@@ -168,21 +189,6 @@ def test_nominative_no_coordinates_in_response():
     assert isinstance(result, JsonResponse)
     assert result.status_code == 500
     assert b"No valid lat/lon found in Nominatim results" in result.content
-
-
-@respx.mock
-def test_gisn_missing_features_key():
-    """Test when GISN API returns 200 but response doesn't have 'features' key"""
-    mock_response = {"some_other_key": "value"}  # Missing 'features' key
-
-    respx.get(GISN_QUERY_URL).mock(return_value=httpx.Response(200, json=mock_response))
-
-    query = RealGISNQuery()
-    result = query.fetch_data((34.7735910, 32.0698820), 100)
-
-    # Should return empty list when 'features' key is missing
-    assert isinstance(result, list)
-    assert result == []
 
 
 @respx.mock
@@ -202,10 +208,108 @@ def test_nominative_partial_coordinates():
         }
     ]
 
-    respx.get(NOIMNATIVE_URL).mock(return_value=httpx.Response(200, json=mock_response))
+    respx.get(NOIMNATIVE_URL).mock(
+        return_value=httpx.Response(200, json=mock_response)
+    )
 
     query = RealNominativeQuery()
     result = query.fetch_data("TestStreet", 123)
 
-    # Should return the first valid coordinate pair (skips invalid first result)
+    # Should return the first valid coordinate pair
     assert result == ('34.7735910', '32.0698820')
+
+
+# GISN Query Tests
+
+@respx.mock
+def test_gisn_fetch_data_success():
+    """Test successful GISN query with valid response"""
+    mock_response = gisn_response_example()
+    respx.get(GISN_QUERY_URL).mock(
+        return_value=httpx.Response(200, json=mock_response)
+    )
+
+    query = RealGISNQuery()
+    result = query.fetch_data((34.7735910, 32.0698820), 100)
+
+    assert isinstance(result, list)
+    assert result == mock_response["features"]
+
+
+@respx.mock
+def test_gisn_fetch_data_empty_features():
+    """Test GISN query when response has empty features list"""
+    mock_response = {"features": []}
+    respx.get(GISN_QUERY_URL).mock(
+        return_value=httpx.Response(200, json=mock_response)
+    )
+
+    query = RealGISNQuery()
+    result = query.fetch_data((34.7735910, 32.0698820), 100)
+
+    assert isinstance(result, list)
+    assert result == []
+
+
+@respx.mock
+def test_gisn_fetch_data_http_404_error():
+    """Test GISN query when HTTP 404 error occurs"""
+    respx.get(GISN_QUERY_URL).mock(
+        return_value=httpx.Response(
+            status_code=404,
+            text="Not Found"
+        )
+    )
+
+    query = RealGISNQuery()
+
+    with pytest.raises(Exception):
+        query.fetch_data((34.7735910, 32.0698820), 100)
+
+
+@respx.mock
+def test_gisn_fetch_data_http_500_error():
+    """Test GISN query when HTTP 500 error occurs"""
+    respx.get(GISN_QUERY_URL).mock(
+        return_value=httpx.Response(
+            status_code=500,
+            text="Internal Server Error"
+        )
+    )
+
+    query = RealGISNQuery()
+
+    with pytest.raises(Exception):
+        query.fetch_data((34.7735910, 32.0698820), 100)
+
+
+@respx.mock
+def test_gisn_fetch_data_request_error():
+    """Test GISN query when network/request error occurs"""
+    respx.get(GISN_QUERY_URL).mock(
+        side_effect=httpx.RequestError("Timeout")
+    )
+
+    query = RealGISNQuery()
+
+    with pytest.raises(Exception) as exc_info:
+        query.fetch_data((34.7735910, 32.0698820), 100)
+    
+    assert "GISN API request failed: Timeout" in str(exc_info.value)
+
+
+@respx.mock
+def test_gisn_missing_features_key():
+    """Test when GISN API returns 200 but missing 'features' key"""
+    mock_response = {"some_other_key": "value"}  # Missing 'features' key
+
+    respx.get(GISN_QUERY_URL).mock(
+        return_value=httpx.Response(200, json=mock_response)
+    )
+
+    query = RealGISNQuery()
+    result = query.fetch_data((34.7735910, 32.0698820), 100)
+
+    # Should return empty list when 'features' key is missing
+    assert isinstance(result, list)
+    assert result == []

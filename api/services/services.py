@@ -18,9 +18,10 @@ def handle_address(street, house_number, radius):
 def convert_rings_to_leaflet_format(rings):
     return [
         # Assuming GISN directly returns [Lat, Lon] for outSR=4326
-        [[lon, lat] for lat, lon in ring] # Flip them here
+        [[lon, lat] for lat, lon in ring]  # Flip them here
         for ring in rings
     ]
+
 
 def risk_assessment(dangerous_places):
     """Filter dangerous places, convert their geometry, and return relevant data for the frontend."""
