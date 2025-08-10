@@ -263,8 +263,10 @@ def test_gisn_fetch_data_http_404_error():
 
     query = RealGISNQuery()
 
-    with pytest.raises(Exception):
+    with pytest.raises(Exception) as exc_info:
         query.fetch_data((34.7735910, 32.0698820), 100)
+
+    assert "GISN API error: 404 Not Found" in str(exc_info.value)
 
 
 @respx.mock
@@ -279,8 +281,10 @@ def test_gisn_fetch_data_http_500_error():
 
     query = RealGISNQuery()
 
-    with pytest.raises(Exception):
+    with pytest.raises(Exception) as exc_info:
         query.fetch_data((34.7735910, 32.0698820), 100)
+
+    assert "GISN API error: 500 Internal Server Error" in str(exc_info.value)
 
 
 @respx.mock
@@ -294,7 +298,7 @@ def test_gisn_fetch_data_request_error():
 
     with pytest.raises(Exception) as exc_info:
         query.fetch_data((34.7735910, 32.0698820), 100)
-    
+
     assert "GISN API request failed: Timeout" in str(exc_info.value)
 
 

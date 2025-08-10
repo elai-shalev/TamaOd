@@ -61,7 +61,7 @@ class RealGISNQuery(BaseGISNQuery):
 
         out_fields = ",".join(["addresses", "building_stage","sw_tama_38"])
 
-        # Note: the inSR and outSR are using coordinate representation codes: EPSG:4326, also known as the WGS84 projection, 
+        # Note: the inSR and outSR are using coordinate representation codes: EPSG:4326, also known as the WGS84 projection,
         # it's the standard way to project and is required by the openstreetmap.
         params = {
             "where": "1=1",
