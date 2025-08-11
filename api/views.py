@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from api.services import handle_address
 
+
 @csrf_exempt
 def analyze_address(request):
     if request.method == "POST":
@@ -14,11 +15,21 @@ def analyze_address(request):
             radius = data.get("radius")
 
             if not street:
-                return JsonResponse({"error": "Missing 'street' field"}, status=400)
+                return JsonResponse(
+                    {"error": "Missing 'street' field"}, status=400
+                )
             if not house_number:
-                return JsonResponse({"error": "Missing 'house number' field"}, status=400)
-            response_data = handle_address(street, house_number, radius)
-            return JsonResponse(response_data, safe=False)
+                return JsonResponse(
+                    {"error": "Missing 'house number' field"}, status=400
+                )
+
+            try:
+                response_data = handle_address(street, house_number, radius)
+                return JsonResponse(response_data, safe=False)
+            except Exception as e:
+                return JsonResponse(
+                    {"error": f"Service error: {e!s}"}, status=500
+                )
 
         except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON"}, status=400)

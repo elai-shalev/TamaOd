@@ -55,74 +55,72 @@ class RealGISNQuery(BaseGISNQuery):
         url = "https://gisn.tel-aviv.gov.il/arcgis/rest/services/WM/IView2WM/MapServer/772/query?"
 
         geometry = {
-        "x": float(coordinate[0]),
-        "y": float(coordinate[1]),
+            "x": float(coordinate[0]),
+            "y": float(coordinate[1]),
         }
 
         out_fields = ",".join(["addresses", "building_stage","sw_tama_38"])
 
+        # Note: the inSR and outSR are using coordinate representation codes: EPSG:4326, also known as the WGS84 projection,
+        # it's the standard way to project and is required by the openstreetmap.
         params = {
-          "where": "1=1",
-          "text": "",
-          "objectIds": "",
-          "time": "",
-          "timeRelation": "esriTimeRelationOverlaps",
-          "geometry": json.dumps(geometry),
-          "geometryType": "esriGeometryPoint",
-           "inSR": "4326",
-          "spatialRel": "esriSpatialRelIntersects",
-          "distance": str(radius),
-          "units": "esriSRUnit_Meter",
-          "relationParam": "",
-          "outFields": out_fields,
-          "returnGeometry": "false",
-          "returnTrueCurves": "false",
-          "maxAllowableOffset": "",
-          "geometryPrecision": "",
-          "outSR": "",
-          "havingClause": "",
-          "returnIdsOnly": "false",
-          "returnCountOnly": "false",
-          "orderByFields": "",
-          "groupByFieldsForStatistics": "",
-          "outStatistics": "",
-          "returnZ": "false",
-          "returnM": "false",
-          "gdbVersion": "",
-          "historicMoment": "",
-          "returnDistinctValues": "false",
-          "resultOffset": "",
-          "resultRecordCount": "",
-          "returnExtentOnly": "false",
-          "sqlFormat": "none",
-          "datumTransformation": "",
-          "parameterValues": "",
-          "rangeValues": "",
-          "quantizationParameters": "",
-          "featureEncoding": "esriDefault",
-          "f": "pjson",
-          }
+            "where": "1=1",
+            "text": "",
+            "objectIds": "",
+            "time": "",
+            "timeRelation": "esriTimeRelationOverlaps",
+            "geometry": json.dumps(geometry),
+            "geometryType": "esriGeometryPoint",
+            "inSR": "4326",
+            "spatialRel": "esriSpatialRelIntersects",
+            "distance": str(radius),
+            "units": "esriSRUnit_Meter",
+            "relationParam": "",
+            "outFields": out_fields,
+            "returnGeometry": "true",
+            "returnTrueCurves": "false",
+            "maxAllowableOffset": "",
+            "geometryPrecision": "",
+            "outSR": "4326",
+            "havingClause": "",
+            "returnIdsOnly": "false",
+            "returnCountOnly": "false",
+            "orderByFields": "",
+            "groupByFieldsForStatistics": "",
+            "outStatistics": "",
+            "returnZ": "false",
+            "returnM": "false",
+            "gdbVersion": "",
+            "historicMoment": "",
+            "returnDistinctValues": "false",
+            "resultOffset": "",
+            "resultRecordCount": "",
+            "returnExtentOnly": "false",
+            "sqlFormat": "none",
+            "datumTransformation": "",
+            "parameterValues": "",
+            "rangeValues": "",
+            "quantizationParameters": "",
+            "featureEncoding": "esriDefault",
+            "f": "pjson",
+        }
 
         # Define headers
         headers = {
-              "Accept": "application/json",
-              "Accept-Language": "en-US,en;q=0.9",
+            "Accept": "application/json",
+            "Accept-Language": "en-US,en;q=0.9",
         }
 
         try:
             response = httpx.get(url, params=params, headers=headers)
 
             if response.status_code != 200:
-                return JsonResponse(
-                    {"error": f"GISN API error: {response.status_code} {response.text}"},
-                    status=response.status_code
-                )
+                raise Exception(f"GISN API error: {response.status_code} {response.text}")
 
             data = response.json()
             return data.get("features", [])
 
         except httpx.RequestError as e:
-            return JsonResponse(
-                {"error": f"GISN API request failed:  {e!s}"},
-                status=503
-            )
+            raise Exception(f"GISN API request failed: {e!s}") from e
+        except (ValueError, TypeError) as e:
+            raise Exception(f"Invalid JSON response from GISN API: {e!s}") from e
