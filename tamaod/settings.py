@@ -11,16 +11,17 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 # Comment out the Mock variables to use the real apis
-# Please note that the GISN mock is using a constant address regardless of the NOMINATIVE returned coordinate
-#USE_MOCK_NOMINATIVE = True
-#USE_MOCK_GISN = True
+# Please note that the GISN mock is using a constant address regardless of
+# the NOMINATIVE returned coordinate
+# USE_MOCK_NOMINATIVE = True
+# USE_MOCK_GISN = True
 
 from pathlib import Path
 import os
 from dotenv import load_dotenv
 
-ENVIRONMENT = os.getenv('DJANGO_ENV', 'production')
-
+# Loading environment type, development by default
+ENVIRONMENT = os.getenv('DJANGO_ENV', 'development')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -38,12 +39,34 @@ load_dotenv(dotenv_path=dotenv_path)
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
+# In non-production environments, fall back to a static dev key to
+# simplify local runs and tests.
+if ENVIRONMENT == 'production':
+    SECRET_KEY = os.getenv('SECRET_KEY')
+    if not SECRET_KEY:
+        raise ValueError(
+            "SECRET_KEY environment variable is required"
+        )
+else:
+    SECRET_KEY = os.getenv('SECRET_KEY', 'dev-insecure-secret-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+if ENVIRONMENT == 'production':
+    DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+else:
+    DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv(
+    'ALLOWED_HOSTS', 'localhost,127.0.0.1'
+).split(',')
+
+# Mock/real service toggles, controlled via environment variables
+USE_MOCK_NOMINATIVE = (
+    os.getenv('USE_MOCK_NOMINATIVE', 'True').lower() == 'true'
+)
+USE_MOCK_GISN = (
+    os.getenv('USE_MOCK_GISN', 'True').lower() == 'true'
+)
 
 
 # Application definition
@@ -56,7 +79,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'ui',
-    'api',
+    'api.apps.ApiConfig',
 ]
 
 MIDDLEWARE = [
@@ -106,16 +129,28 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'NAME': (
+            'django.contrib.auth.password_validation.'
+            'UserAttributeSimilarityValidator'
+        ),
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'NAME': (
+            'django.contrib.auth.password_validation.'
+            'MinimumLengthValidator'
+        ),
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        'NAME': (
+            'django.contrib.auth.password_validation.'
+            'CommonPasswordValidator'
+        ),
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        'NAME': (
+            'django.contrib.auth.password_validation.'
+            'NumericPasswordValidator'
+        ),
     },
 ]
 
@@ -135,8 +170,23 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'ui/static/'
-STATICFILES_DIRS = [BASE_DIR / "ui/static",]  # If you have a custom directory
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / "ui/static"]
+
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'mediafiles'
+
+# Security settings for production
+if not DEBUG:
+    SECURE_SSL_REDIRECT = False  # Set to True if using HTTPS
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    X_FRAME_OPTIONS = 'DENY'
 
 
 # Default primary key field type

@@ -38,7 +38,18 @@ def analyze_address(request):
 
 @csrf_exempt
 def get_streets(request):
-    with Path('api/data/streets.json', encoding='utf-8').open() as f:
-        street_data = json.load(f)
-    street_names = street_data.get("t_rechov_values", [])
-    return JsonResponse({"streets": street_names})
+    try:
+        data_dir = Path(__file__).resolve().parent / 'data'
+        streets_path = data_dir / 'streets.json'
+        with streets_path.open(encoding='utf-8') as f:
+            street_data = json.load(f)
+        street_names = street_data.get("t_rechov_values", [])
+        return JsonResponse({"streets": street_names})
+    except FileNotFoundError:
+        return JsonResponse(
+            {"error": "streets.json not found"}, status=500
+        )
+    except json.JSONDecodeError:
+        return JsonResponse(
+            {"error": "Invalid streets.json format"}, status=500
+        )

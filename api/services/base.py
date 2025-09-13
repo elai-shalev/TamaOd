@@ -11,5 +11,5 @@ class BaseGISNQuery(ABC):
     """Abstract base class for API services."""
 
     @abstractmethod
-    def fetch_data(self):
+    def fetch_data(self, coordinate, radius: int):
         """Fetch data from the API."""
