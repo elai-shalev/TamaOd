@@ -2,6 +2,8 @@
 
 This guide covers building, deploying, and running the TamaOd Django application in a containerized environment.
 
+> **Note:** For general project information, local development setup, and testing, see [README.md](README.md). This document focuses exclusively on deployment and containerization.
+
 ## Overview
 
 The application is containerized using Docker with:
