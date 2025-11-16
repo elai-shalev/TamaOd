@@ -36,7 +36,10 @@ COPY . .
 RUN mkdir -p /var/log/supervisor \
   && mkdir -p /app/staticfiles \
   && mkdir -p /app/mediafiles \
-  && mkdir -p /var/run
+  && mkdir -p /var/run \
+  && mkdir -p /var/cache/nginx \
+  && mkdir -p /var/lib/nginx/tmp \
+  && mkdir -p /app/run
 
 # Create PDM config directory for app user
 RUN mkdir -p /home/app/.config/pdm \
@@ -47,7 +50,9 @@ RUN chown -R app:app /app \
   && chown -R app:app /var/log/supervisor \
   && chown -R app:app /var/log/nginx \
   && chown -R app:app /var/lib/nginx \
-  && chmod 755 /var/run
+  && chown -R app:app /var/cache/nginx \
+  && chown -R app:app /var/run \
+  && chown -R app:app /app/run
 
 # Copy nginx configuration
 COPY deploy/nginx.conf /etc/nginx/nginx.conf
@@ -63,12 +68,16 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 COPY deploy/run-gunicorn.sh /usr/local/bin/run-gunicorn.sh
 RUN chmod +x /usr/local/bin/run-gunicorn.sh
 
-# Collect static files (provide temporary SECRET_KEY for build)
+# Collect static files as app user (provide temporary SECRET_KEY for build)
+# Note: We need to ensure app user owns /app before running collectstatic
+RUN chown -R app:app /app
+USER app
 RUN SECRET_KEY=build-time-key-only pdm run manage.py collectstatic --noinput
 
 # Expose port
 EXPOSE 8080
 
+# Run as app user (supervisord will also run as app user)
 # Use entrypoint to validate environment and start supervisord
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

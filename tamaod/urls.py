@@ -29,17 +29,22 @@ urlpatterns = [
 # Serve static and media files
 # In production, these should ideally be served by nginx/web server,
 # but we serve them here for local development (e.g., when using .env.prod)
-# All static files are in ui/static/ (defined in STATICFILES_DIRS)
+# Static files are automatically discovered from the 'ui' app's static directory
 
-# Serve static files from ui/static/
+# Serve static files from ui/static/ (for development)
 # Using 'static/<path:path>' since STATIC_URL is '/static/'
-urlpatterns += [
-    path(
-        'static/<path:path>',
-        serve,
-        {'document_root': settings.STATICFILES_DIRS[0]},
-    ),
-]
+if settings.DEBUG:
+    from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+    urlpatterns += staticfiles_urlpatterns()
+else:
+    # In production, serve from STATIC_ROOT
+    urlpatterns += [
+        path(
+            'static/<path:path>',
+            serve,
+            {'document_root': settings.STATIC_ROOT},
+        ),
+    ]
 
 # Serve media files
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

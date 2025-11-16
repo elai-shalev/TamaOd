@@ -185,7 +185,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [BASE_DIR / "ui/static"]
+# Note: ui/static is automatically discovered via the 'ui' app in INSTALLED_APPS
+# No need to explicitly add it to STATICFILES_DIRS to avoid duplicates
+STATICFILES_DIRS = []
 
 # Media files
 MEDIA_URL = '/media/'
