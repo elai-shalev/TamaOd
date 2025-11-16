@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.static import serve
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -25,7 +26,20 @@ urlpatterns = [
     path('', include('ui.urls')),
 ]
 
-if settings.DEBUG:
-    from django.contrib.staticfiles.urls import staticfiles_urlpatterns
-    urlpatterns = staticfiles_urlpatterns() + urlpatterns
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve static and media files
+# In production, these should ideally be served by nginx/web server,
+# but we serve them here for local development (e.g., when using .env.prod)
+# All static files are in ui/static/ (defined in STATICFILES_DIRS)
+
+# Serve static files from ui/static/
+# Using 'static/<path:path>' since STATIC_URL is '/static/'
+urlpatterns += [
+    path(
+        'static/<path:path>',
+        serve,
+        {'document_root': settings.STATICFILES_DIRS[0]},
+    ),
+]
+
+# Serve media files
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
