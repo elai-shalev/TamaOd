@@ -20,7 +20,7 @@ class RealNominativeQuery(BaseNominativeQuery):
         # Set defaults if not provided
         user_agent = os.getenv('USER_AGENT', 'TamaOd/1.0 (https://github.com/your-org/tamaod)')
         referer = os.getenv('REFERRER', 'https://tamaod.local')
-        
+
         # Build headers dict, only including non-None values
         headers = {}
         if user_agent:
