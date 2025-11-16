@@ -51,7 +51,11 @@ def get_bool(key, default=False):
     Returns True if the value is one of: '1', 'true', 'yes'
     (case-insensitive). Otherwise returns False or the provided default.
     """
-    return os.getenv(key, str(default)).lower() in ('1', 'true', 'yes')
+    value = os.getenv(key)
+    if value is None:
+        return default
+    # Convert to string and then to lowercase for comparison
+    return str(value).lower() in ('1', 'true', 'yes')
 
 
 # Quick-start development settings - unsuitable for production
@@ -86,6 +90,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_extensions',  # For runserver_plus with HTTPS support
     'ui',
     'api.apps.ApiConfig',
 ]

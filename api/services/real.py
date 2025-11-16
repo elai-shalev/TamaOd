@@ -16,10 +16,17 @@ class RealNominativeQuery(BaseNominativeQuery):
             "format": "json",
         }
 
-        headers = {
-            "User-Agent": os.getenv('USER_AGENT'),
-            "Referer": os.getenv('REFERRER'),
-        }
+        # Nominatim requires a User-Agent header (usage policy)
+        # Set defaults if not provided
+        user_agent = os.getenv('USER_AGENT', 'TamaOd/1.0 (https://github.com/your-org/tamaod)')
+        referer = os.getenv('REFERRER', 'https://tamaod.local')
+        
+        # Build headers dict, only including non-None values
+        headers = {}
+        if user_agent:
+            headers["User-Agent"] = user_agent
+        if referer:
+            headers["Referer"] = referer
 
         try:
             response = httpx.get(

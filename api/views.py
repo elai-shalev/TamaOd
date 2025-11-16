@@ -23,10 +23,33 @@ def analyze_address(request):
                     {"error": "Missing 'house number' field"}, status=400
                 )
 
+            # Convert to proper types
+            try:
+                house_number = int(house_number)
+            except (ValueError, TypeError):
+                return JsonResponse(
+                    {"error": "Invalid 'houseNumber' - must be a number"}, status=400
+                )
+            
+            # Convert radius to int, default to 100 if not provided
+            if radius is None:
+                radius = 100
+            else:
+                try:
+                    radius = int(radius)
+                except (ValueError, TypeError):
+                    return JsonResponse(
+                        {"error": "Invalid 'radius' - must be a number"}, status=400
+                    )
+
             try:
                 response_data = handle_address(street, house_number, radius)
                 return JsonResponse(response_data, safe=False)
             except Exception as e:
+                # Log the full traceback for debugging
+                import traceback
+                error_trace = traceback.format_exc()
+                print(f"Error in handle_address: {error_trace}")  # This will go to container logs
                 return JsonResponse(
                     {"error": f"Service error: {e!s}"}, status=500
                 )

@@ -1,13 +1,19 @@
 #!/bin/bash
 
 # Build and Push Script for TamaOd
-# Usage: ./build-and-push.sh [registry] [tag]
-# Example: ./build-and-push.sh quay.io/username v1.0.0
+# Usage: ./deploy/build-and-push.sh [registry] [tag]
+# Example: ./deploy/build-and-push.sh quay.io/username v1.0.0
+#
+# Note: This script can be run from any directory - it will automatically
+# change to the project root for the build context
 
 set -e
 
-# Default values
+# Get the script directory and project root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# Default values
 REGISTRY=${1:-}
 TAG=${2:-latest}
 
@@ -19,8 +25,11 @@ IMAGE_NAME="tamaod"
 
 FULL_IMAGE="${REGISTRY}/${IMAGE_NAME}"
 
+# Change to project root for build context
+cd "$PROJECT_ROOT"
+
 echo "Building Docker image..."
-podman build -t ${IMAGE_NAME}:${TAG} .
+podman build -f deploy/Dockerfile -t ${IMAGE_NAME}:${TAG} .
 
 echo "Tagging image as ${FULL_IMAGE}:${TAG}..."
 podman tag ${IMAGE_NAME}:${TAG} ${FULL_IMAGE}:${TAG}
@@ -46,10 +55,9 @@ fi
 
 echo ""
 echo "To run the container:"
-echo "  podman run -p 8080:8080 ${FULL_IMAGE}:${TAG}"
-echo ""
+
 echo "To run with custom environment:"
 echo "  podman run -p 8080:8080 \\"
-echo "    -e SECRET_KEY=\"your-secret-key\" \\"
-echo "    -e ALLOWED_HOSTS=\"yourdomain.com\" \\"
+echo "    --env-file .env.prod \\"
+echo "    --name tamaod-app \\"
 echo "    ${FULL_IMAGE}:${TAG}" 

@@ -34,7 +34,7 @@ Internet → Host:8080 → Container:8080 (nginx) → Container:8000 (gunicorn/D
 1. **Clone the repository**:
 
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/elai-shalev/TamaOd
    cd TamaOd
    ```
 
@@ -48,36 +48,86 @@ Internet → Host:8080 → Container:8080 (nginx) → Container:8000 (gunicorn/D
 
 ### Manual Docker Build
 
-1. **Build the image**:
+1. **Stop and remove existing container (if any)**:
 
    ```bash
-   podman build -t tamaod:latest .
+   # Stop the container if it's running
+   podman stop tamaod-app 2>/dev/null || true
+
+   # Remove the container
+   podman rm tamaod-app 2>/dev/null || true
    ```
 
-2. **Run the container**:
+2. **Create and configure environment file**:
+
+   ```bash
+   # Copy the template
+   cp env.prod.template .env.prod
+
+   # Edit .env.prod with your values
+   # At minimum, you must set:
+   # - SECRET_KEY (generate one with the command below)
+   # - ALLOWED_HOSTS (your domain or localhost,127.0.0.1)
+   # - USER_AGENT: Your application identifier
+   # - REFERRER: Your site URL
+
+   # Generate a secret key:
+   python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+   ```
+
+3. **Build the image**:
+
+   ```bash
+   podman build -f deploy/Dockerfile -t tamaod:latest .
+   ```
+
+4. **Run the container with environment file**:
+
    ```bash
    podman run -it -p 0.0.0.0:8080:8080 \
-     -e SECRET_KEY="your-secret-key-here" \
-     -e DEBUG=False \
-     -e ALLOWED_HOSTS="localhost,127.0.0.1,0.0.0.0" \
-     quay.io/<username>/tamaod:latest
+     --env-file .env.prod \
+     --name tamaod-app \
+     localhost/tamaod:latest
    ```
+
+   **Note:**
+
+   - The `--env-file .env.prod` flag loads all environment variables from the file
+   - `SECRET_KEY` is required in the environment file
+   - The container uses **REAL APIs by default** (Nominatim for geocoding, GISN for construction data)
+   - Make sure `.env.prod` is in your `.gitignore` (it contains secrets)
 
 ## Production Deployment
 
 ### Building for Production
 
-1. **Set production environment variables**:
+1. **Create production environment file**:
 
    ```bash
-   # Copy template and edit
+   # Copy the template
    cp env.prod.template .env.prod
-   # Edit .env.prod with your production values
+
+   # Edit .env.prod with your production values:
+   # - SECRET_KEY: Generate a strong secret key
+   # - DEBUG: Set to False
+   # - ALLOWED_HOSTS: Your production domain(s)
+   # - USER_AGENT: Your application identifier
+   # - REFERRER: Your site URL
+
+   # Generate a secret key:
+   python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
    ```
 
 2. **Build production image**:
+
    ```bash
-   podman build -t tamaod:production .
+   podman build -f deploy/Dockerfile -t tamaod:production .
+   ```
+
+   Or use the build script:
+
+   ```bash
+   ./deploy/build-and-push.sh quay.io/your-username v1.0.0
    ```
 
 ### Pushing to Container Registry
@@ -119,28 +169,40 @@ Internet → Host:8080 → Container:8080 (nginx) → Container:8000 (gunicorn/D
 #### Basic Production Run
 
 ```bash
+# Stop and remove existing container (if any)
+podman stop tamaod-app 2>/dev/null || true
+podman rm tamaod-app 2>/dev/null || true
+
+# Ensure you have .env.prod configured (see "Building for Production" above)
+# The environment file must contain at minimum:
+# - SECRET_KEY (required)
+# - ALLOWED_HOSTS (your domain)
+# - DEBUG=False
+
 podman run -d \
   --name tamaod-app \
   -p 0.0.0.0:8080:8080 \
-  -e SECRET_KEY="your-very-secure-secret-key" \
-  -e DEBUG=False \
-  -e ALLOWED_HOSTS="yourdomain.com,www.yourdomain.com" \
-  -e USE_MOCK_NOMINATIVE=False \
-  -e USE_MOCK_GISN=False \
+  --env-file .env.prod \
   --restart unless-stopped \
   quay.io/your-username/tamaod:latest
 ```
 
+**Important:**
+
+- The `SECRET_KEY` in `.env.prod` is required. The container will not start without it.
+- The container uses **REAL APIs by default** (Nominatim and GISN). Mock APIs are only used if explicitly enabled with `USE_MOCK_NOMINATIVE=True` and `USE_MOCK_GISN=True` in your `.env.prod` file.
+- Never commit `.env.prod` to version control - it contains secrets.
+
 ## Environment Variables
 
-| Variable              | Default                       | Description                   |
-| --------------------- | ----------------------------- | ----------------------------- |
-| `SECRET_KEY`          | _required_                    | Django secret key             |
-| `DEBUG`               | `False`                       | Enable Django debug mode      |
-| `DJANGO_ENV`          | `production`                  | Environment setting           |
-| `ALLOWED_HOSTS`       | `localhost,127.0.0.1,0.0.0.0` | Comma-separated allowed hosts |
-| `USE_MOCK_NOMINATIVE` | `True`                        | Use mock nominative service   |
-| `USE_MOCK_GISN`       | `True`                        | Use mock GISN service         |
+| Variable              | Default                       | Description                                     |
+| --------------------- | ----------------------------- | ----------------------------------------------- |
+| `SECRET_KEY`          | _required_                    | Django secret key                               |
+| `DEBUG`               | `False`                       | Enable Django debug mode                        |
+| `DJANGO_ENV`          | `production`                  | Environment setting                             |
+| `ALLOWED_HOSTS`       | `localhost,127.0.0.1,0.0.0.0` | Comma-separated allowed hosts                   |
+| `USE_MOCK_NOMINATIVE` | `False`                       | Use mock nominative service (default: REAL API) |
+| `USE_MOCK_GISN`       | `False`                       | Use mock GISN service (default: REAL API)       |
 
 ## Container Structure
 

@@ -17,10 +17,32 @@ Analyze addresses for possible construction
    python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
    ```
 
-3. **Run the application:**
+3. **Run the application locally:**
+
+   **Default (HTTPS - Recommended):**
+
    ```bash
-   pdm run manage.py runserver
+   pdm run runserver
+   # or
+   ./scripts/runserver_local.sh
    ```
+
+   The server will automatically generate SSL certificates on first run if needed.
+   Access at: **`https://localhost:8000/`** or **`https://127.0.0.1:8000/`**
+
+   Note: Your browser will show a security warning for the self-signed certificate. This is normal for local development. Click "Advanced" and "Proceed" to continue.
+
+   **HTTP mode (if needed):**
+
+   ```bash
+   pdm run runserver-http
+   # or
+   USE_HTTP=1 ./scripts/runserver_local.sh
+   ```
+
+   Access at: **`http://localhost:8000/`** or **`http://127.0.0.1:8000/`**
+
+   Note: Use HTTPS (default) if your browser forces HTTPS connections.
 
 The application automatically loads `.env.prod` (production settings, also used locally).
 

@@ -65,13 +65,24 @@ function updateStreetOptions(streets) {
 
 function loadStreets() {
     fetch('/api/streets/')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(errorData => {
+                    throw new Error(`Failed to load streets (${response.status}): ${errorData.error || response.statusText}`);
+                }).catch(() => {
+                    throw new Error(`Failed to load streets (${response.status}): ${response.statusText}`);
+                });
+            }
+            return response.json();
+        })
         .then(data => {
             const streets = data.streets || [];
             updateStreetOptions(streets);
         })
         .catch(error => {
-            handleError(error, null); // No user message needed for street loading
+            console.error("Error loading streets:", error);
+            // Show error but don't block the UI
+            handleError(error, null);
         });
 }
 
@@ -110,23 +121,33 @@ function addRadiusCircle(map, center, radiusInMeters) {
 }
 
 function calculatePolygonCenter(data) {
-    // Calculate the center point of all polygons
+    // Calculate the center point of all polygons and markers
     let totalLat = 0;
     let totalLng = 0;
     let pointCount = 0;
     
     data.forEach(item => {
         if (item.geometry && item.geometry.rings) {
+            // Handle polygons with rings
             item.geometry.rings.forEach(ring => {
                 ring.forEach((point, index) => {
                     // Ensure we have valid coordinates
                     if (Array.isArray(point) && point.length >= 2) {
-                        totalLat += point[0]; // Latitude (was point[1])
-                        totalLng += point[1]; // Longitude (was point[0])
+                        totalLat += point[0]; // Latitude
+                        totalLng += point[1]; // Longitude
                         pointCount++;
                     }
                 });
             });
+        } else if (item.attributes) {
+            // Handle markers - use attributes coordinates or estimate from address
+            const lat = item.attributes.lat;
+            const lng = item.attributes.lng;
+            if (lat && lng) {
+                totalLat += parseFloat(lat);
+                totalLng += parseFloat(lng);
+                pointCount++;
+            }
         }
     });
     
@@ -143,9 +164,18 @@ function addPolygonsToMap(map, data) {
     const addedPolygons = [];
     
     data.forEach(item => {
-        // Ensure the 'attributes' and 'geometry' exist before accessing
-        if (item.attributes && item.geometry && item.geometry.rings) {
-            const color = item.attributes.sw_tama_38 === "כן" ? 'red' : 'yellow';
+        // Ensure the 'attributes' exists
+        if (!item.attributes) {
+            console.warn("Skipping item due to missing attributes:", item);
+            return;
+        }
+        
+        const color = item.attributes.sw_tama_38 === "כן" ? 'red' : 'yellow';
+        const address = item.attributes.addresses || "Unknown address";
+        const popupText = `${address}<br>Tama 38: ${item.attributes.sw_tama_38 || "N/A"}`;
+        
+        // If geometry with rings exists, add polygon
+        if (item.geometry && item.geometry.rings) {
             const {rings} = item.geometry;
             
             const polygon = L.polygon(rings, {
@@ -155,21 +185,31 @@ function addPolygonsToMap(map, data) {
                 weight: 2
             })
             .addTo(map)
-            .bindPopup(`${item.attributes.addresses}<br>Tama 38: ${item.attributes.sw_tama_38}`);
+            .bindPopup(popupText);
             
             addedPolygons.push(polygon);
         } else {
-            console.warn("Skipping item due to missing attributes or geometry:", item);
+            // If no geometry, add a marker instead (for mock data)
+            // Try to get coordinates from attributes or use a default location
+            const lat = item.attributes.lat || 32.0699;  // Tel Aviv center
+            const lng = item.attributes.lng || 34.7735;
+            
+            const marker = L.marker([lat, lng], {
+                icon: L.divIcon({
+                    className: 'custom-marker',
+                    html: `<div style="background-color: ${color}; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white;"></div>`,
+                    iconSize: [20, 20]
+                })
+            })
+            .addTo(map)
+            .bindPopup(popupText);
+            
+            addedPolygons.push(marker);
         }
     });
     
-    // Zoom or fit map to all polygons
-    if (addedPolygons.length > 0) {
-        const polygonGroup = L.featureGroup(addedPolygons);
-        map.fitBounds(polygonGroup.getBounds().pad(0.5));
-    } else {
-        alert("No valid polygons found in the response to display.");
-    }
+    // Return the array of added polygons/markers
+    return addedPolygons;
 }
 
 // Form Processing Functions
@@ -196,23 +236,18 @@ function processAnalyzeResponse(data, map, radius) {
         console.error("Invalid center or radius for circle:", center, radiusInMeters);
     }
     
-    // Add polygons to map
-    addPolygonsToMap(map, data);
+    // Add polygons to map and get the array of added features
+    const addedPolygons = addPolygonsToMap(map, data);
     
-    // Fit map to show both polygons and radius circle
-    if (radiusCircle) {
-        const polygons = [];
-        data.forEach(item => {
-            if (item.attributes && item.geometry && item.geometry.rings) {
-                polygons.push(L.polygon(item.geometry.rings));
-            }
-        });
-        
-        if (polygons.length > 0) {
-            const allFeatures = [...polygons, radiusCircle];
-            const group = L.featureGroup(allFeatures);
-            map.fitBounds(group.getBounds().pad(0.5));
-        }
+    // Fit map to show both polygons/markers and radius circle
+    if (radiusCircle && addedPolygons.length > 0) {
+        const allFeatures = [...addedPolygons, radiusCircle];
+        const group = L.featureGroup(allFeatures);
+        map.fitBounds(group.getBounds().pad(0.5));
+    } else if (addedPolygons.length > 0) {
+        // If no radius circle, just fit to polygons/markers
+        const group = L.featureGroup(addedPolygons);
+        map.fitBounds(group.getBounds().pad(0.5));
     }
 }
 
@@ -235,7 +270,18 @@ function submitAddressForm(event) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ street: street, houseNumber: houseNumber, radius: radius }),
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            // If response is not OK, try to get error message from JSON
+            return response.json().then(errorData => {
+                throw new Error(`API Error (${response.status}): ${errorData.error || response.statusText}`);
+            }).catch(() => {
+                // If error response is not JSON, throw with status text
+                throw new Error(`API Error (${response.status}): ${response.statusText}`);
+            });
+        }
+        return response.json();
+    })
     .then(data => processAnalyzeResponse(data, map, radius))
     .catch(error => handleError(error));
 }
