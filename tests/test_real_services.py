@@ -1,8 +1,8 @@
 import pytest
 import respx
 import httpx
-from django.http import JsonResponse
 from api.services.real import RealNominativeQuery, RealGISNQuery
+from api.services.base import DataRetrievalError
 import os
 
 # Set env vars required by headers
@@ -104,7 +104,8 @@ def test_nominative_fetch_data_success():
     query = RealNominativeQuery()
     result = query.fetch_data("Herzl", 10)
 
-    assert result == ('34.7735910', '32.0698820')
+    # Should return coordinates as floats
+    assert result == (34.7735910, 32.0698820)
 
 
 @respx.mock
@@ -115,11 +116,12 @@ def test_nominative_fetch_data_no_results():
     )
 
     query = RealNominativeQuery()
-    result = query.fetch_data("FakeStreet", 9999)
 
-    assert isinstance(result, JsonResponse)
-    assert result.status_code == 500
-    assert b"could not locate address" in result.content
+    with pytest.raises(DataRetrievalError) as exc_info:
+        query.fetch_data("FakeStreet", 9999)
+
+    assert exc_info.value.status_code == 500
+    assert "could not locate address" in str(exc_info.value)
 
 
 @respx.mock
@@ -133,11 +135,14 @@ def test_nominative_fetch_data_http_error():
     )
 
     query = RealNominativeQuery()
-    result = query.fetch_data("BuggyStreet", 1)
 
-    assert isinstance(result, JsonResponse)
-    assert result.status_code == 500
-    assert b"Nominatim API error: 500 Internal Server Error" in result.content
+    with pytest.raises(DataRetrievalError) as exc_info:
+        query.fetch_data("BuggyStreet", 1)
+
+    assert exc_info.value.status_code == 500
+    assert "Nominatim API error: 500 Internal Server Error" in str(
+        exc_info.value
+    )
 
 
 @respx.mock
@@ -148,11 +153,12 @@ def test_nominative_fetch_data_invalid_json():
     )
 
     query = RealNominativeQuery()
-    result = query.fetch_data("CorruptStreet", 2)
 
-    assert isinstance(result, JsonResponse)
-    assert result.status_code == 500
-    assert b"Invalid JSON response from Nominatim" in result.content
+    with pytest.raises(DataRetrievalError) as exc_info:
+        query.fetch_data("CorruptStreet", 2)
+
+    assert exc_info.value.status_code == 500
+    assert "Invalid JSON response from Nominatim" in str(exc_info.value)
 
 
 @respx.mock
@@ -163,11 +169,12 @@ def test_nominative_fetch_data_timeout():
     )
 
     query = RealNominativeQuery()
-    result = query.fetch_data("TimeoutStreet", 3)
 
-    assert isinstance(result, JsonResponse)
-    assert result.status_code == 500
-    assert b"Nominatim request failed" in result.content
+    with pytest.raises(DataRetrievalError) as exc_info:
+        query.fetch_data("TimeoutStreet", 3)
+
+    assert exc_info.value.status_code == 500
+    assert "Nominatim request failed" in str(exc_info.value)
 
 
 @respx.mock
@@ -184,11 +191,14 @@ def test_nominative_no_coordinates_in_response():
     )
 
     query = RealNominativeQuery()
-    result = query.fetch_data("TestStreet", 123)
 
-    assert isinstance(result, JsonResponse)
-    assert result.status_code == 500
-    assert b"No valid lat/lon found in Nominatim results" in result.content
+    with pytest.raises(DataRetrievalError) as exc_info:
+        query.fetch_data("TestStreet", 123)
+
+    assert exc_info.value.status_code == 500
+    assert "No valid lat/lon found in Nominatim results" in str(
+        exc_info.value
+    )
 
 
 @respx.mock
@@ -215,8 +225,8 @@ def test_nominative_partial_coordinates():
     query = RealNominativeQuery()
     result = query.fetch_data("TestStreet", 123)
 
-    # Should return the first valid coordinate pair
-    assert result == ('34.7735910', '32.0698820')
+    # Should return the first valid coordinate pair as floats
+    assert result == (34.7735910, 32.0698820)
 
 
 # GISN Query Tests

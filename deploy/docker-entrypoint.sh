@@ -22,7 +22,6 @@ export USE_MOCK_NOMINATIVE="${USE_MOCK_NOMINATIVE:-False}"
 export USE_MOCK_GISN="${USE_MOCK_GISN:-False}"
 
 echo "Starting TamaOd application..."
-echo "  SECRET_KEY: ${SECRET_KEY:0:10}..."
 echo "  ALLOWED_HOSTS: $ALLOWED_HOSTS"
 echo "  DEBUG: $DEBUG"
 echo "  USE_MOCK_NOMINATIVE: $USE_MOCK_NOMINATIVE (using REAL Nominatim API)"

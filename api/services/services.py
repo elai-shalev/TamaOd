@@ -1,4 +1,5 @@
 from api import app_state
+from api.services.base import DataRetrievalError
 
 
 def handle_address(street, house_number, radius):
@@ -7,28 +8,42 @@ def handle_address(street, house_number, radius):
 
     Uses Nominatim to get coordinates and GISN to find nearby places,
     then filters them through a risk assessment function.
+
+    Args:
+        street: Street name.
+        house_number: House number.
+        radius: Search radius in meters.
+
+    Returns:
+        List of dangerous places with their attributes and geometry.
+
+    Raises:
+        DataRetrievalError: If data retrieval from Nominatim service fails.
+        Exception: If coordinate format is invalid or GISN service fails.
     """
     nominative_service = app_state.get_nominative_service()
     gisn_service = app_state.get_gisn_service()
 
-    address_coordinate = nominative_service.fetch_data(street, house_number)
-
-    # Check if Nominative service returned an error (JsonResponse)
-    # Use type name check to avoid import issues
-    if hasattr(address_coordinate, '__class__') and 'JsonResponse' in str(type(address_coordinate)):
-        # Extract error message from JsonResponse
-        try:
-            error_data = address_coordinate.content.decode('utf-8')
-            import json
-            error_dict = json.loads(error_data)
-            error_msg = error_dict.get('error', 'Unknown error from Nominatim service')
-        except Exception:
-            error_msg = 'Error from Nominatim service'
-        raise Exception(f"Nominatim error: {error_msg}")
+    try:
+        address_coordinate = nominative_service.fetch_data(
+            street, house_number
+        )
+    except DataRetrievalError as e:
+        # Re-raise with more context
+        raise DataRetrievalError(
+            f"Nominatim error: {e.message}",
+            status_code=e.status_code,
+        ) from e
 
     # Verify coordinate is a tuple or list with 2 elements
-    if not isinstance(address_coordinate, tuple | list) or len(address_coordinate) != 2:
-        raise Exception(f"Invalid coordinate format from Nominatim: {address_coordinate}")
+    if (
+        not isinstance(address_coordinate, tuple | list)
+        or len(address_coordinate) != 2
+    ):
+        raise Exception(
+            f"Invalid coordinate format from Nominatim: "
+            f"{address_coordinate}"
+        )
 
     places_in_radius = gisn_service.fetch_data(address_coordinate, radius)
     return risk_assessment(places_in_radius)

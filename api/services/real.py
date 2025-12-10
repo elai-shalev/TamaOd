@@ -1,14 +1,19 @@
 import json
 import os
-from django.http import JsonResponse
 import httpx
-from api.services.base import BaseNominativeQuery, BaseGISNQuery
+from api.services.base import (
+    BaseNominativeQuery,
+    BaseGISNQuery,
+    DataRetrievalError,
+)
 from httpx import HTTPStatusError, RequestError
 
 
 class RealNominativeQuery(BaseNominativeQuery):
 
-    def fetch_data(self, street: str, house_number: int):
+    def fetch_data(
+        self, street: str, house_number: int
+    ) -> tuple[float, float]:
         query_string = " ".join([street, str(house_number), "תל", "אביב"])
         url = "https://nominatim.openstreetmap.org/search"
         params = {
@@ -18,7 +23,10 @@ class RealNominativeQuery(BaseNominativeQuery):
 
         # Nominatim requires a User-Agent header (usage policy)
         # Set defaults if not provided
-        user_agent = os.getenv('USER_AGENT', 'TamaOd/1.0 (https://github.com/your-org/tamaod)')
+        user_agent = os.getenv(
+            'USER_AGENT',
+            'TamaOd/1.0 (https://github.com/elai-shalev/tamaod)'
+        )
         referer = os.getenv('REFERRER', 'https://tamaod.local')
 
         # Build headers dict, only including non-None values
@@ -38,29 +46,28 @@ class RealNominativeQuery(BaseNominativeQuery):
             response.raise_for_status()
             data = response.json()
         except HTTPStatusError as e:
-            return JsonResponse(
-                {
-                    "error": (
-                        f"Nominatim API error: {e.response.status_code} "
-                        f"{e.response.reason_phrase}"
-                    )
-                },
-                status=e.response.status_code,
-            )
-        except RequestError:
-            return JsonResponse(
-                {"error": "Nominatim request failed"},
-                status=500,
-            )
-        except (ValueError, TypeError):
-            return JsonResponse(
-                {"error": "Invalid JSON response from Nominatim"},
-                status=500,
-            )
+            raise DataRetrievalError(
+                (
+                    f"Nominatim API error: {e.response.status_code} "
+                    f"{e.response.reason_phrase}"
+                ),
+                status_code=e.response.status_code,
+            ) from e
+        except RequestError as e:
+            raise DataRetrievalError(
+                "Nominatim request failed",
+                status_code=500,
+            ) from e
+        except (ValueError, TypeError) as e:
+            raise DataRetrievalError(
+                "Invalid JSON response from Nominatim",
+                status_code=500,
+            ) from e
 
         if not data:
-            return JsonResponse(
-                {"error": "could not locate address"}, status=500
+            raise DataRetrievalError(
+                "could not locate address",
+                status_code=500,
             )
 
         # collect all places
@@ -71,18 +78,22 @@ class RealNominativeQuery(BaseNominativeQuery):
         }
 
         if not places:
-            return JsonResponse(
-                {"error": "No valid lat/lon found in Nominatim results"},
-                status=500,
+            raise DataRetrievalError(
+                "No valid lat/lon found in Nominatim results",
+                status_code=500,
             )
 
-        return next(iter(places.values()))  # Get first available coordinates
+        # Get first available coordinates and convert to float
+        lon, lat = next(iter(places.values()))
+        return (float(lon), float(lat))
 
 
 class RealGISNQuery(BaseGISNQuery):
     """Real API implementation."""
 
-    def fetch_data(self, coordinate, radius: int):
+    def fetch_data(
+        self, coordinate, radius: int
+    ):
 
         url = (
             "https://gisn.tel-aviv.gov.il/arcgis/rest/services/WM/IView2WM/MapServer/772/query"

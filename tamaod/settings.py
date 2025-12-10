@@ -90,10 +90,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_extensions',  # For runserver_plus with HTTPS support
     'ui',
     'api.apps.ApiConfig',
 ]
+
+# Add django_extensions if available (optional dependency)
+try:
+    import django_extensions  # noqa: F401
+    INSTALLED_APPS.append('django_extensions')  # For runserver_plus with HTTPS support
+except ImportError:
+    pass
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

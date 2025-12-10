@@ -18,7 +18,9 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.views.static import serve
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.contrib.staticfiles.views import serve as staticfiles_serve
+from django.views.decorators.cache import never_cache
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -34,15 +36,17 @@ urlpatterns = [
 # Serve static files from ui/static/ (for development)
 # Using 'static/<path:path>' since STATIC_URL is '/static/'
 if settings.DEBUG:
-    from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+    # In DEBUG mode, use the standard staticfiles_urlpatterns
     urlpatterns += staticfiles_urlpatterns()
 else:
-    # In production, serve from STATIC_ROOT
+    # In production/non-DEBUG mode, use staticfiles finders explicitly
+    # This allows serving files from ui/static/ without requiring
+    # collectstatic. The serve view uses staticfiles finders to locate
+    # files in app directories
     urlpatterns += [
         path(
             'static/<path:path>',
-            serve,
-            {'document_root': settings.STATIC_ROOT},
+            never_cache(staticfiles_serve),
         ),
     ]
 
