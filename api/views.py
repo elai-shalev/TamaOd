@@ -23,6 +23,25 @@ def analyze_address(request):
                     {"error": "Missing 'house number' field"}, status=400
                 )
 
+            # Convert to proper types
+            try:
+                house_number = int(house_number)
+            except (ValueError, TypeError):
+                return JsonResponse(
+                    {"error": "Invalid 'houseNumber' - must be a number"}, status=400
+                )
+
+            # Convert radius to int, default to 100 if not provided
+            if radius is None:
+                radius = 100
+            else:
+                try:
+                    radius = int(radius)
+                except (ValueError, TypeError):
+                    return JsonResponse(
+                        {"error": "Invalid 'radius' - must be a number"}, status=400
+                    )
+
             try:
                 response_data = handle_address(street, house_number, radius)
                 return JsonResponse(response_data, safe=False)
@@ -38,7 +57,18 @@ def analyze_address(request):
 
 @csrf_exempt
 def get_streets(request):
-    with Path('api/data/streets.json', encoding='utf-8').open() as f:
-        street_data = json.load(f)
-    street_names = street_data.get("t_rechov_values", [])
-    return JsonResponse({"streets": street_names})
+    try:
+        data_dir = Path(__file__).resolve().parent / 'data'
+        streets_path = data_dir / 'streets.json'
+        with streets_path.open(encoding='utf-8') as f:
+            street_data = json.load(f)
+        street_names = street_data.get("t_rechov_values", [])
+        return JsonResponse({"streets": street_names})
+    except FileNotFoundError:
+        return JsonResponse(
+            {"error": "streets.json not found"}, status=500
+        )
+    except json.JSONDecodeError:
+        return JsonResponse(
+            {"error": "Invalid streets.json format"}, status=500
+        )

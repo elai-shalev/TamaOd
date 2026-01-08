@@ -16,10 +16,39 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.contrib.staticfiles.views import serve as staticfiles_serve
+from django.views.decorators.cache import never_cache
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/', include('api.urls')),
     path('', include('ui.urls')),
-    path('api/', include('api.urls')),
-    path('api/', include('api.urls')),
 ]
+
+# Serve static and media files
+# In production, these should ideally be served by nginx/web server,
+# but we serve them here for local development (e.g., when using .env.prod)
+# Static files are automatically discovered from the 'ui' app's static directory
+
+# Serve static files from ui/static/ (for development)
+# Using 'static/<path:path>' since STATIC_URL is '/static/'
+if settings.DEBUG:
+    # In DEBUG mode, use the standard staticfiles_urlpatterns
+    urlpatterns += staticfiles_urlpatterns()
+else:
+    # In production/non-DEBUG mode, use staticfiles finders explicitly
+    # This allows serving files from ui/static/ without requiring
+    # collectstatic. The serve view uses staticfiles finders to locate
+    # files in app directories
+    urlpatterns += [
+        path(
+            'static/<path:path>',
+            never_cache(staticfiles_serve),
+        ),
+    ]
+
+# Serve media files
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

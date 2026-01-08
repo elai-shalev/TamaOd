@@ -10,8 +10,8 @@ def test_risk_assessment():
     ]
 
     expected_output = [
-        {"addresses": "Place A", "building_stage": "בבניה"},
-        {"addresses": "Place C", "building_stage": "בבניה"},
+        {"attributes": {"addresses": "Place A", "building_stage": "בבניה"}, "geometry": None},
+        {"attributes": {"addresses": "Place C", "building_stage": "בבניה"}, "geometry": None},
     ]
 
     assert risk_assessment(input_data) == expected_output

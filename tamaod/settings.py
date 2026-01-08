@@ -11,39 +11,74 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 # Comment out the Mock variables to use the real apis
-# Please note that the GISN mock is using a constant address regardless of the NOMINATIVE returned coordinate
-#USE_MOCK_NOMINATIVE = True
-#USE_MOCK_GISN = True
+# Please note that the GISN mock is using a constant address regardless of
+# the NOMINATIVE returned coordinate
+# USE_MOCK_NOMINATIVE = True
+# USE_MOCK_GISN = True
 
 from pathlib import Path
 import os
 from dotenv import load_dotenv
-
-ENVIRONMENT = os.getenv('DJANGO_ENV', 'production')
-
+from django.core.management.utils import get_random_secret_key
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-if ENVIRONMENT == 'production':
-    dotenv_path = BASE_DIR / '.env.prod'
-elif ENVIRONMENT == 'test':
-    dotenv_path = BASE_DIR / '.env.test'
-else:  # Assume development
-    dotenv_path = BASE_DIR / '.env'
+# Load environment variables from .env file if it exists
+# Priority: ENV_FILE env var > .env.prod > .env.test > .env
+# - .env.prod: Production settings (also used locally)
+# - .env.test: Test environment settings
+# - .env: Fallback/default development settings
+env_file = os.getenv('ENV_FILE')
+if env_file:
+    dotenv_path = BASE_DIR / env_file
+else:
+    # Try common .env file names, prioritizing production
+    for env_name in ['.env.prod', '.env.test', '.env']:
+        dotenv_path = BASE_DIR / env_name
+        if dotenv_path.exists():
+            break
+    else:
+        dotenv_path = BASE_DIR / '.env'
 
-load_dotenv(dotenv_path=dotenv_path)
+load_dotenv(dotenv_path=dotenv_path, override=False)
+
+
+# Helper function for boolean environment variables
+def get_bool(key, default=False):
+    """Parse boolean environment variable.
+
+    Returns True if the value is one of: '1', 'true', 'yes'
+    (case-insensitive). Otherwise returns False or the provided default.
+    """
+    value = os.getenv(key)
+    if value is None:
+        return default
+    # Convert to string and then to lowercase for comparison
+    return str(value).lower() in ('1', 'true', 'yes')
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
+# If SECRET_KEY is not provided, generate one at runtime using Django's
+# utility. See SECURITY.md for instructions on generating a secure key.
+SECRET_KEY = os.getenv('SECRET_KEY') or get_random_secret_key()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG defaults to False for security. Set DEBUG=True explicitly if needed.
+DEBUG = get_bool('DEBUG', False)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    host.strip() for host in os.getenv(
+        'ALLOWED_HOSTS', 'localhost,127.0.0.1'
+    ).split(',')
+]
+
+# Mock/real service toggles, controlled via environment variables
+USE_MOCK_NOMINATIVE = get_bool('USE_MOCK_NOMINATIVE', False)
+USE_MOCK_GISN = get_bool('USE_MOCK_GISN', False)
 
 
 # Application definition
@@ -56,8 +91,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'ui',
-    'api',
+    'api.apps.ApiConfig',
 ]
+
+# Add django_extensions if available (optional dependency)
+try:
+    import django_extensions  # noqa: F401
+    INSTALLED_APPS.append('django_extensions')  # For runserver_plus with HTTPS support
+except ImportError:
+    pass
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -106,16 +148,28 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'NAME': (
+            'django.contrib.auth.password_validation.'
+            'UserAttributeSimilarityValidator'
+        ),
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'NAME': (
+            'django.contrib.auth.password_validation.'
+            'MinimumLengthValidator'
+        ),
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        'NAME': (
+            'django.contrib.auth.password_validation.'
+            'CommonPasswordValidator'
+        ),
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        'NAME': (
+            'django.contrib.auth.password_validation.'
+            'NumericPasswordValidator'
+        ),
     },
 ]
 
@@ -135,8 +189,35 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'ui/static/'
-STATICFILES_DIRS = [BASE_DIR / "ui/static",]  # If you have a custom directory
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+# Note: ui/static is automatically discovered via the 'ui' app in INSTALLED_APPS
+# No need to explicitly add it to STATICFILES_DIRS to avoid duplicates
+STATICFILES_DIRS = []
+
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'mediafiles'
+
+# Security settings
+# These are applied when DEBUG=False, allowing override via environment
+# variables
+# Note: SSL/HSTS settings default to False - only enable when HTTPS
+# is actually configured (e.g., behind a reverse proxy with SSL)
+if not DEBUG:
+    SECURE_SSL_REDIRECT = get_bool('SECURE_SSL_REDIRECT', False)
+    # HSTS should only be enabled when HTTPS is properly configured
+    if get_bool('SECURE_HSTS_ENABLE', False):
+        SECURE_HSTS_SECONDS = int(
+            os.getenv('SECURE_HSTS_SECONDS', '31536000')
+        )
+        SECURE_HSTS_INCLUDE_SUBDOMAINS = get_bool(
+            'SECURE_HSTS_INCLUDE_SUBDOMAINS', True
+        )
+        SECURE_HSTS_PRELOAD = get_bool('SECURE_HSTS_PRELOAD', True)
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    X_FRAME_OPTIONS = 'DENY'
 
 
 # Default primary key field type

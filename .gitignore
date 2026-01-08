@@ -96,6 +96,7 @@ celerybeat.pid
 
 # Environments
 .env*
+!.env.template
 .venv
 env/
 venv/
@@ -108,6 +109,9 @@ cython_debug/
 
 # Ruff stuff:
 .ruff_cache/
+
+# SSL certificates for local development
+.ssl/
 
 # PyPI configuration file
 .pypirc
