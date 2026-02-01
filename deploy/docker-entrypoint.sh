@@ -65,11 +65,23 @@ configure_ssl() {
 
     if [ "$use_ssl" = true ]; then
         echo "SSL certificates found - enabling HTTPS mode"
-        cp /etc/nginx/nginx-ssl.conf /etc/nginx/nginx.conf
+        # Try to copy to /etc/nginx if writable, otherwise use /tmp
+        if cp /etc/nginx/nginx-ssl.conf /etc/nginx/nginx.conf 2>/dev/null; then
+            export NGINX_CONF="/etc/nginx/nginx.conf"
+        else
+            cp /etc/nginx/nginx-ssl.conf /tmp/nginx.conf
+            export NGINX_CONF="/tmp/nginx.conf"
+        fi
         export SSL_ACTIVE="true"
     else
         echo "SSL disabled - using HTTP-only mode"
-        cp /etc/nginx/nginx-http.conf /etc/nginx/nginx.conf
+        # Try to copy to /etc/nginx if writable, otherwise use /tmp
+        if cp /etc/nginx/nginx-http.conf /etc/nginx/nginx.conf 2>/dev/null; then
+            export NGINX_CONF="/etc/nginx/nginx.conf"
+        else
+            cp /etc/nginx/nginx-http.conf /tmp/nginx.conf
+            export NGINX_CONF="/tmp/nginx.conf"
+        fi
         export SSL_ACTIVE="false"
     fi
 }
