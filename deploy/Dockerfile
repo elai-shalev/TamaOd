@@ -32,14 +32,17 @@ RUN pip install --no-cache-dir pdm \
 # Copy project files
 COPY . .
 
-# Create necessary directories
+# Create necessary directories (including SSL and certbot directories)
 RUN mkdir -p /var/log/supervisor \
   && mkdir -p /app/staticfiles \
   && mkdir -p /app/mediafiles \
   && mkdir -p /var/run \
   && mkdir -p /var/cache/nginx \
   && mkdir -p /var/lib/nginx/tmp \
-  && mkdir -p /app/run
+  && mkdir -p /app/run \
+  && mkdir -p /var/www/certbot \
+  && mkdir -p /etc/ssl/certs \
+  && mkdir -p /etc/ssl/private
 
 # Create PDM config directory for app user
 RUN mkdir -p /home/app/.config/pdm \
@@ -52,10 +55,21 @@ RUN chown -R app:app /app \
   && chown -R app:app /var/lib/nginx \
   && chown -R app:app /var/cache/nginx \
   && chown -R app:app /var/run \
-  && chown -R app:app /app/run
+  && chown -R app:app /app/run \
+  && chown -R app:app /var/www/certbot \
+  && chown -R app:app /etc/ssl/certs \
+  && chown -R app:app /etc/ssl/private
 
-# Copy nginx configuration
-COPY deploy/nginx.conf /etc/nginx/nginx.conf
+# Copy nginx configurations (entrypoint will choose based on SSL availability)
+COPY deploy/nginx.conf /etc/nginx/nginx-http.conf
+COPY deploy/nginx-ssl.conf /etc/nginx/nginx-ssl.conf
+
+# Set nginx config permissions so app user can switch between HTTP/HTTPS configs
+# Default to HTTP config, entrypoint will switch if SSL certs are present
+RUN cp /etc/nginx/nginx-http.conf /etc/nginx/nginx.conf \
+  && chown app:app /etc/nginx/nginx.conf \
+  && chown app:app /etc/nginx/nginx-http.conf \
+  && chown app:app /etc/nginx/nginx-ssl.conf
 
 # Copy supervisor configuration
 COPY deploy/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
@@ -74,8 +88,8 @@ RUN chown -R app:app /app
 USER app
 RUN SECRET_KEY=build-time-key-only pdm run manage.py collectstatic --noinput
 
-# Expose port
-EXPOSE 8080
+# Expose HTTP and HTTPS ports
+EXPOSE 8080 8443
 
 # Run as app user (supervisord will also run as app user)
 # Use entrypoint to validate environment and start supervisord
