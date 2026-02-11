@@ -110,7 +110,7 @@ pdm run runserver-http
 
 The HTTPS mode auto-generates a self-signed certificate on first run. Your browser will show a security warning - this is normal for local development.
 
-## Container Deployment
+## Production Deployment
 
 See [DEPLOYMENT.md](DEPLOYMENT.md) for Docker/Podman deployment with SSL/TLS support.
 

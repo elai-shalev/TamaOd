@@ -8,12 +8,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
   PORT=8080 \
   PDM_USE_VENV=false
 
-# Install system dependencies
+# Install system dependencies including Node.js for JavaScript obfuscation
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
   nginx \
   supervisor \
   curl \
+  nodejs \
+  npm \
   && rm -rf /var/lib/apt/lists/*
 
 # Create app user
@@ -31,6 +33,13 @@ RUN pip install --no-cache-dir pdm \
 
 # Copy project files
 COPY . .
+
+# Build obfuscated JavaScript for production
+# Install npm dependencies and build
+RUN npm install --production=false \
+  && npm run build \
+  && rm -rf node_modules \
+  && npm cache clean --force
 
 # Create necessary directories (including SSL and certbot directories)
 RUN mkdir -p /var/log/supervisor \

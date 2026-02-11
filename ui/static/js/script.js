@@ -1,8 +1,28 @@
+// CSRF Token Management
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function getCSRFToken() {
+    return getCookie('csrftoken');
+}
+
 // Dev Response Box Management Functions
 function hideDevResponse() {
     const devResponseBox = document.getElementById("dev-response");
     const toggleDevViewButton = document.getElementById("toggleDevView");
-    
+
     devResponseBox.classList.remove("dev-response-visible");
     devResponseBox.classList.add("dev-response-hidden");
     toggleDevViewButton.textContent = "Expand Dev View";
@@ -32,18 +52,30 @@ function setDevResponseContent(content) {
     devResponseBox.innerText = content;
 }
 
+// HTML Escaping Function
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // Error Handling Functions
 function handleError(error, userMessage = "An error occurred. Please try again.") {
     console.error("Error:", error);
-    
+
     // Show error in dev response box
     setDevResponseContent(`Error: ${error.message || error}`);
     showDevResponse();
-    
+
     // Show user-friendly message in map container if it exists
     const cityMapBox = document.getElementById("city-map");
     if (cityMapBox && userMessage) {
-        cityMapBox.innerHTML = `<p style="color: red;">${userMessage}</p>`;
+        // Use textContent to prevent XSS or create safe DOM element
+        cityMapBox.innerHTML = ''; // Clear first
+        const errorPara = document.createElement('p');
+        errorPara.style.color = 'red';
+        errorPara.textContent = userMessage; // Safe from XSS
+        cityMapBox.appendChild(errorPara);
     }
 }
 
@@ -162,22 +194,25 @@ function calculatePolygonCenter(data) {
 
 function addPolygonsToMap(map, data) {
     const addedPolygons = [];
-    
+
     data.forEach(item => {
         // Ensure the 'attributes' exists
         if (!item.attributes) {
             console.warn("Skipping item due to missing attributes:", item);
             return;
         }
-        
+
         const color = item.attributes.sw_tama_38 === "כן" ? 'red' : 'yellow';
         const address = item.attributes.addresses || "Unknown address";
-        const popupText = `${address}<br>Tama 38: ${item.attributes.sw_tama_38 || "N/A"}`;
-        
+        const tama38Status = item.attributes.sw_tama_38 || "N/A";
+
+        // Escape user data to prevent XSS in popups
+        const popupText = `${escapeHtml(address)}<br>Tama 38: ${escapeHtml(tama38Status)}`;
+
         // If geometry with rings exists, add polygon
         if (item.geometry && item.geometry.rings) {
             const {rings} = item.geometry;
-            
+
             const polygon = L.polygon(rings, {
                 color: color,
                 fillColor: color,
@@ -186,28 +221,31 @@ function addPolygonsToMap(map, data) {
             })
             .addTo(map)
             .bindPopup(popupText);
-            
+
             addedPolygons.push(polygon);
         } else {
             // If no geometry, add a marker instead (for mock data)
             // Try to get coordinates from attributes or use a default location
             const lat = item.attributes.lat || 32.0699;  // Tel Aviv center
             const lng = item.attributes.lng || 34.7735;
-            
+
+            // Validate color to prevent code injection
+            const safeColor = (color === 'red' || color === 'yellow') ? color : 'gray';
+
             const marker = L.marker([lat, lng], {
                 icon: L.divIcon({
                     className: 'custom-marker',
-                    html: `<div style="background-color: ${color}; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white;"></div>`,
+                    html: `<div style="background-color: ${safeColor}; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white;"></div>`,
                     iconSize: [20, 20]
                 })
             })
             .addTo(map)
             .bindPopup(popupText);
-            
+
             addedPolygons.push(marker);
         }
     });
-    
+
     // Return the array of added polygons/markers
     return addedPolygons;
 }
@@ -265,9 +303,13 @@ function submitAddressForm(event) {
     const map = initializeMap();
     
     // Fetch and process data
+    const csrftoken = getCSRFToken();
     fetch('/api/analyze/', {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrftoken
+        },
         body: JSON.stringify({ street: street, houseNumber: houseNumber, radius: radius }),
     })
     .then(response => {

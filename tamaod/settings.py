@@ -29,17 +29,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # - .env.prod: Production settings (also used locally)
 # - .env.test: Test environment settings
 # - .env: Fallback/default development settings
-env_file = os.getenv('ENV_FILE')
+env_file = os.getenv("ENV_FILE")
 if env_file:
     dotenv_path = BASE_DIR / env_file
 else:
     # Try common .env file names, prioritizing production
-    for env_name in ['.env.prod', '.env.test', '.env']:
+    for env_name in [".env.prod", ".env.test", ".env"]:
         dotenv_path = BASE_DIR / env_name
         if dotenv_path.exists():
             break
     else:
-        dotenv_path = BASE_DIR / '.env'
+        dotenv_path = BASE_DIR / ".env"
 
 load_dotenv(dotenv_path=dotenv_path, override=False)
 
@@ -55,7 +55,7 @@ def get_bool(key, default=False):
     if value is None:
         return default
     # Convert to string and then to lowercase for comparison
-    return str(value).lower() in ('1', 'true', 'yes')
+    return str(value).lower() in ("1", "true", "yes")
 
 
 # Quick-start development settings - unsuitable for production
@@ -64,81 +64,84 @@ def get_bool(key, default=False):
 # SECURITY WARNING: keep the secret key used in production secret!
 # If SECRET_KEY is not provided, generate one at runtime using Django's
 # utility. See SECURITY.md for instructions on generating a secure key.
-SECRET_KEY = os.getenv('SECRET_KEY') or get_random_secret_key()
+SECRET_KEY = os.getenv("SECRET_KEY") or get_random_secret_key()
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG defaults to False for security. Set DEBUG=True explicitly if needed.
-DEBUG = get_bool('DEBUG', False)
+DEBUG = get_bool("DEBUG", False)
 
 ALLOWED_HOSTS = [
-    host.strip() for host in os.getenv(
-        'ALLOWED_HOSTS', 'localhost,127.0.0.1'
-    ).split(',')
+    host.strip()
+    for host in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 ]
 
 # Mock/real service toggles, controlled via environment variables
-USE_MOCK_NOMINATIVE = get_bool('USE_MOCK_NOMINATIVE', False)
-USE_MOCK_GISN = get_bool('USE_MOCK_GISN', False)
+USE_MOCK_NOMINATIVE = get_bool("USE_MOCK_NOMINATIVE", False)
+USE_MOCK_GISN = get_bool("USE_MOCK_GISN", False)
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'ui',
-    'api.apps.ApiConfig',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "csp",  # Content Security Policy
+    "ui",
+    "api.apps.ApiConfig",
 ]
 
 # Add django_extensions if available (optional dependency)
 try:
     import django_extensions  # noqa: F401
-    INSTALLED_APPS.append('django_extensions')  # For runserver_plus with HTTPS support
+
+    # For runserver_plus with HTTPS support
+    INSTALLED_APPS.append("django_extensions")
 except ImportError:
     pass
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "csp.middleware.CSPMiddleware",  # Content Security Policy
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = 'tamaod.urls'
+ROOT_URLCONF = "tamaod.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'tamaod.wsgi.application'
+WSGI_APPLICATION = "tamaod.wsgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
 
@@ -148,27 +151,25 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': (
-            'django.contrib.auth.password_validation.'
-            'UserAttributeSimilarityValidator'
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "UserAttributeSimilarityValidator"
         ),
     },
     {
-        'NAME': (
-            'django.contrib.auth.password_validation.'
-            'MinimumLengthValidator'
+        "NAME": (
+            "django.contrib.auth.password_validation.MinimumLengthValidator"
         ),
     },
     {
-        'NAME': (
-            'django.contrib.auth.password_validation.'
-            'CommonPasswordValidator'
+        "NAME": (
+            "django.contrib.auth.password_validation.CommonPasswordValidator"
         ),
     },
     {
-        'NAME': (
-            'django.contrib.auth.password_validation.'
-            'NumericPasswordValidator'
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "NumericPasswordValidator"
         ),
     },
 ]
@@ -177,9 +178,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -189,15 +190,16 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-# Note: ui/static is automatically discovered via the 'ui' app in INSTALLED_APPS
-# No need to explicitly add it to STATICFILES_DIRS to avoid duplicates
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+# Note: ui/static is automatically discovered via the 'ui' app
+# in INSTALLED_APPS. No need to explicitly add it to STATICFILES_DIRS
+# to avoid duplicates
 STATICFILES_DIRS = []
 
 # Media files
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'mediafiles'
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "mediafiles"
 
 # Security settings
 # These are applied when DEBUG=False, allowing override via environment
@@ -205,43 +207,90 @@ MEDIA_ROOT = BASE_DIR / 'mediafiles'
 # Note: SSL/HSTS settings default to False - only enable when HTTPS
 # is actually configured (e.g., behind a reverse proxy with SSL)
 if not DEBUG:
-    SECURE_SSL_REDIRECT = get_bool('SECURE_SSL_REDIRECT', False)
+    SECURE_SSL_REDIRECT = get_bool("SECURE_SSL_REDIRECT", False)
     # HSTS should only be enabled when HTTPS is properly configured
-    if get_bool('SECURE_HSTS_ENABLE', False):
-        SECURE_HSTS_SECONDS = int(
-            os.getenv('SECURE_HSTS_SECONDS', '31536000')
-        )
+    if get_bool("SECURE_HSTS_ENABLE", False):
+        SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", "31536000"))
         SECURE_HSTS_INCLUDE_SUBDOMAINS = get_bool(
-            'SECURE_HSTS_INCLUDE_SUBDOMAINS', True
+            "SECURE_HSTS_INCLUDE_SUBDOMAINS", True
         )
-        SECURE_HSTS_PRELOAD = get_bool('SECURE_HSTS_PRELOAD', True)
+        SECURE_HSTS_PRELOAD = get_bool("SECURE_HSTS_PRELOAD", True)
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
-    X_FRAME_OPTIONS = 'DENY'
+    X_FRAME_OPTIONS = "DENY"
 
 # Proxy SSL header configuration
-# When running behind nginx with SSL termination, trust the X-Forwarded-Proto header
-# This tells Django that the request was made via HTTPS even though nginx proxies to HTTP
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# When running behind nginx with SSL termination, trust the
+# X-Forwarded-Proto header. This tells Django that the request was
+# made via HTTPS even though nginx proxies to HTTP
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# CSRF Settings
+# Ensure CSRF cookie is accessible to JavaScript for AJAX requests
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read CSRF token
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SECURE = not DEBUG  # Use secure cookies in production
 
 # CSRF Trusted Origins
-# Required for Django 4.0+ when submitting forms from a different origin/protocol
-# Add your domain(s) here when using HTTPS
-csrf_origins = os.getenv('CSRF_TRUSTED_ORIGINS', '')
+# Required for Django 4.0+ when submitting forms from a different
+# origin/protocol. Add your domain(s) here when using HTTPS
+csrf_origins = os.getenv("CSRF_TRUSTED_ORIGINS", "")
 if csrf_origins:
     CSRF_TRUSTED_ORIGINS = [
-        origin.strip() for origin in csrf_origins.split(',') if origin.strip()
+        origin.strip() for origin in csrf_origins.split(",") if origin.strip()
     ]
 else:
     # Auto-generate from ALLOWED_HOSTS when not explicitly set
     CSRF_TRUSTED_ORIGINS = [
-        f'https://{host}'
+        f"https://{host}"
         for host in ALLOWED_HOSTS
-        if host not in ('*', 'localhost', '127.0.0.1', '0.0.0.0')
+        if host not in ("*", "localhost", "127.0.0.1", "0.0.0.0")
     ]
 
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Content Security Policy (CSP) settings
+# Protects against XSS, clickjacking, and other code injection attacks
+CSP_DEFAULT_SRC = ("'self'",)
+CSP_SCRIPT_SRC = (
+    "'self'",
+    "https://unpkg.com",  # Leaflet maps
+    "https://cdn.jsdelivr.net",  # CDN for libraries
+)
+CSP_STYLE_SRC = (
+    "'self'",
+    "'unsafe-inline'",  # Required for Leaflet and inline styles
+    "https://unpkg.com",
+    "https://cdn.jsdelivr.net",
+)
+CSP_IMG_SRC = (
+    "'self'",
+    "data:",  # For inline images
+    "https:",  # For map tiles
+    "blob:",  # For dynamically generated images
+)
+CSP_FONT_SRC = ("'self'", "data:", "https:")
+CSP_CONNECT_SRC = ("'self'",)  # API calls to same origin only
+CSP_FRAME_ANCESTORS = ("'none'",)  # Prevent clickjacking
+CSP_BASE_URI = ("'self'",)
+CSP_FORM_ACTION = ("'self'",)
+
+# Rate limiting cache backend
+# Required for django-ratelimit
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "ratelimit-cache",
+    }
+}
+
+# Rate limit settings
+# When rate limit is exceeded, return HTTP 429 instead of raising exception
+RATELIMIT_ENABLE = True
+RATELIMIT_USE_CACHE = "default"
+# Return 429 instead of raising exception (for testing)
+RATELIMIT_VIEW = "django_ratelimit.views.Ratelimited"

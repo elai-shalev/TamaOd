@@ -5,7 +5,7 @@ from api.services.base import BaseNominativeQuery, BaseGISNQuery
 class MockNominativeQuery(BaseNominativeQuery):
 
     def fetch_data(
-        self, street: str, house_number: int
+        self, street: str, house_number: str
     ) -> tuple[float, float]:
         # Mock data from Nominatim API response
         data = (
