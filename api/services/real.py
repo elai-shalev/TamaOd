@@ -12,9 +12,9 @@ from httpx import HTTPStatusError, RequestError
 class RealNominativeQuery(BaseNominativeQuery):
 
     def fetch_data(
-        self, street: str, house_number: int
+        self, street: str, house_number: str
     ) -> tuple[float, float]:
-        query_string = " ".join([street, str(house_number), "תל", "אביב"])
+        query_string = " ".join([street, house_number, "תל", "אביב"])
         url = "https://nominatim.openstreetmap.org/search"
         params = {
             "q": query_string,

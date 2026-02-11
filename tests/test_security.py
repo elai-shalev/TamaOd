@@ -30,8 +30,7 @@ class TestRateLimiting:
 
         # 31st request should be rate limited
         response = client.get(url)
-        # Rate limiter can return either 429 or raise exception (403)
-        assert response.status_code in [429, 403]
+        assert response.status_code == 429
 
 
 @pytest.mark.django_db
@@ -65,7 +64,7 @@ class TestInputValidation:
         assert "Missing 'house number' field" in response.json()["error"]
 
     def test_invalid_house_number_type(self, client):
-        """Test that non-numeric house number returns 400."""
+        """Test that house number with no digits returns 400."""
         url = "/api/analyze/"
         data = {"street": "Test Street", "houseNumber": "abc", "radius": 100}
 
@@ -75,12 +74,12 @@ class TestInputValidation:
             content_type="application/json",
         )
         assert response.status_code == 400
-        assert "must be a number" in response.json()["error"]
+        assert "must contain at least one digit" in response.json()["error"]
 
-    def test_house_number_out_of_range_low(self, client):
-        """Test that house number < 1 returns 400."""
+    def test_empty_house_number(self, client):
+        """Test that empty string house number returns 400."""
         url = "/api/analyze/"
-        data = {"street": "Test Street", "houseNumber": 0, "radius": 100}
+        data = {"street": "Test Street", "houseNumber": "", "radius": 100}
 
         response = client.post(
             url,
@@ -88,20 +87,21 @@ class TestInputValidation:
             content_type="application/json",
         )
         assert response.status_code == 400
-        assert "must be between 1 and 9999" in response.json()["error"]
 
-    def test_house_number_out_of_range_high(self, client):
-        """Test that house number > 9999 returns 400."""
+    def test_alphanumeric_house_number_accepted(self, client):
+        """Test that alphanumeric house numbers like '10A' are accepted."""
         url = "/api/analyze/"
-        data = {"street": "Test Street", "houseNumber": 10000, "radius": 100}
+        data = {"street": "Test Street", "houseNumber": "10A", "radius": 100}
 
         response = client.post(
             url,
             data=json.dumps(data),
             content_type="application/json",
         )
-        assert response.status_code == 400
-        assert "must be between 1 and 9999" in response.json()["error"]
+        # Should not return 400 for house number validation
+        assert response.status_code != 400 or "houseNumber" not in response.json().get(
+            "error", ""
+        )
 
     def test_invalid_radius_type(self, client):
         """Test that non-numeric radius returns 400."""
@@ -302,3 +302,15 @@ class TestStringSanitization:
         # The actual behavior depends on implementation
         # At minimum, the string should not contain raw HTML entities
         assert result != "Test<>&\"'"
+
+    def test_sanitize_non_string_input(self):
+        """Test that non-string input is converted and sanitized."""
+        from api.views import sanitize_string
+
+        class MaliciousObj:
+            def __str__(self):
+                return "<script>alert('xss')</script>hello"
+
+        result = sanitize_string(MaliciousObj())
+        assert "<script>" not in result
+        assert "hello" in result

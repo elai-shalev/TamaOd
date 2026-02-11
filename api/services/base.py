@@ -24,7 +24,7 @@ class BaseNominativeQuery(ABC):
 
     @abstractmethod
     def fetch_data(
-        self, street: str, house_number: int
+        self, street: str, house_number: str
     ) -> tuple[float, float]:
         """Fetch data from the API.
 

@@ -19,7 +19,7 @@ def sanitize_string(value, max_length=100):
         Sanitized string
     """
     if not isinstance(value, str):
-        return str(value)
+        value = str(value)
 
     # Strip whitespace
     value = value.strip()
@@ -36,7 +36,7 @@ def sanitize_string(value, max_length=100):
     return re.sub(r'[^\u0590-\u05FF\w\s\-\'.,]', '', value)
 
 
-@ratelimit(key='ip', rate='20/m', method='POST')
+@ratelimit(key='ip', rate='20/m', method='POST', block=False)
 @require_http_methods(["POST"])
 def analyze_address(request):
     """Analyze an address for nearby problematic buildings.
@@ -78,22 +78,11 @@ def analyze_address(request):
                 status=400,
             )
 
-        # Convert to proper types
-        try:
-            house_number = int(house_number)
-            if house_number < 1 or house_number > 9999:
-                return JsonResponse(
-                    {
-                        "error": (
-                            "Invalid 'houseNumber' - "
-                            "must be between 1 and 9999"
-                        )
-                    },
-                    status=400,
-                )
-        except (ValueError, TypeError):
+        # Sanitize house number as string (supports alphanumeric like "10A")
+        house_number = sanitize_string(str(house_number), max_length=10)
+        if not house_number or not re.search(r'\d', house_number):
             return JsonResponse(
-                {"error": "Invalid 'houseNumber' - must be a number"},
+                {"error": "Invalid 'houseNumber' - must contain at least one digit"},
                 status=400,
             )
 
@@ -133,7 +122,7 @@ def analyze_address(request):
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
 
-@ratelimit(key='ip', rate='30/m', method='GET')
+@ratelimit(key='ip', rate='30/m', method='GET', block=False)
 @require_http_methods(["GET"])
 def get_streets(request):
     """Get list of available streets.
