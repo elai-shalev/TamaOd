@@ -219,6 +219,27 @@ if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     X_FRAME_OPTIONS = 'DENY'
 
+# Proxy SSL header configuration
+# When running behind nginx with SSL termination, trust the X-Forwarded-Proto header
+# This tells Django that the request was made via HTTPS even though nginx proxies to HTTP
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# CSRF Trusted Origins
+# Required for Django 4.0+ when submitting forms from a different origin/protocol
+# Add your domain(s) here when using HTTPS
+csrf_origins = os.getenv('CSRF_TRUSTED_ORIGINS', '')
+if csrf_origins:
+    CSRF_TRUSTED_ORIGINS = [
+        origin.strip() for origin in csrf_origins.split(',') if origin.strip()
+    ]
+else:
+    # Auto-generate from ALLOWED_HOSTS when not explicitly set
+    CSRF_TRUSTED_ORIGINS = [
+        f'https://{host}'
+        for host in ALLOWED_HOSTS
+        if host not in ('*', 'localhost', '127.0.0.1', '0.0.0.0')
+    ]
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

@@ -96,7 +96,7 @@ celerybeat.pid
 
 # Environments
 .env*
-!.env.template
+!.env.example
 .venv
 env/
 venv/
@@ -112,6 +112,11 @@ cython_debug/
 
 # SSL certificates for local development
 .ssl/
+
+# Kubernetes/OpenShift secrets (keep templates only)
+cluster-deploy/secret.yaml
+kubeconfig
+**/kubeconfig
 
 # PyPI configuration file
 .pypirc

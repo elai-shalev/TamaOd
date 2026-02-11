@@ -1,280 +1,287 @@
 # TamaOd Deployment Guide
 
-This guide covers building, deploying, and running the TamaOd Django application in a containerized environment.
+This guide explains how to self-host your own instance of the TamaOd application using Docker/Podman containers with SSL support.
 
-> **Note:** For general project information, local development setup, and testing, see [README.md](README.md). This document focuses exclusively on deployment and containerization.
+## Quick Start
 
-## Overview
-
-The application is containerized using Docker with:
-
-- **nginx** for serving static files and reverse proxy (port 8080)
-- **gunicorn** for running the Django application (port 8000)
-- **supervisor** for process management
-- Single container deployment for simplicity
-
-### Architecture
-
-```
-Internet → Host:8080 → Container:8080 (nginx) → Container:8000 (gunicorn/Django)
-```
-
-- External traffic hits nginx on port 8080
-- nginx serves static files directly
-- nginx proxies dynamic requests to gunicorn on port 8000
-
-## Prerequisites
-
-- Podman installed on your system
-- Docker Hub or Quay.io account for pushing images
-- Git for version control
-
-## Local Development
-
-### Quick Start
-
-1. **Clone the repository**:
-
-   ```bash
-   git clone https://github.com/elai-shalev/TamaOd
-   cd TamaOd
-   ```
-
-2. **Build and run locally**:
-
-   `pdm run python manage.py runserver`
-
-3. **Access the application**:
-   - Main application: http://localhost:8080
-   - Health check: http://localhost:8080/health/
-
-### Manual Docker Build
-
-1. **Stop and remove existing container (if any)**:
-
-   ```bash
-   # Stop the container if it's running
-   podman stop tamaod-app 2>/dev/null || true
-
-   # Remove the container
-   podman rm tamaod-app 2>/dev/null || true
-   ```
-
-2. **Create and configure environment file**:
-
-   ```bash
-   # Copy the template
-   cp env.prod.template .env.prod
-
-   # Edit .env.prod with your values
-   # At minimum, you must set:
-   # - SECRET_KEY (generate one with the command below)
-   # - ALLOWED_HOSTS (your domain or localhost,127.0.0.1)
-   # - USER_AGENT: Your application identifier
-   # - REFERRER: Your site URL
-
-   # Generate a secret key:
-   python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
-   ```
-
-3. **Build the image**:
-
-   ```bash
-   podman build -f deploy/Dockerfile -t tamaod:latest .
-   ```
-
-4. **Run the container with environment file**:
-
-   ```bash
-   podman run -it -p 0.0.0.0:8080:8080 \
-     --env-file .env.prod \
-     --name tamaod-app \
-     localhost/tamaod:latest
-   ```
-
-   **Note:**
-
-   - The `--env-file .env.prod` flag loads all environment variables from the file
-   - `SECRET_KEY` is required in the environment file
-   - The container uses **REAL APIs by default** (Nominatim for geocoding, GISN for construction data)
-   - Make sure `.env.prod` is in your `.gitignore` (it contains secrets)
-
-## Production Deployment
-
-### Building for Production
-
-1. **Create production environment file**:
-
-   ```bash
-   # Copy the template
-   cp env.prod.template .env.prod
-
-   # Edit .env.prod with your production values:
-   # - SECRET_KEY: Generate a strong secret key
-   # - DEBUG: Set to False
-   # - ALLOWED_HOSTS: Your production domain(s)
-   # - USER_AGENT: Your application identifier
-   # - REFERRER: Your site URL
-
-   # Generate a secret key:
-   python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
-   ```
-
-2. **Build production image**:
-
-   ```bash
-   podman build -f deploy/Dockerfile -t tamaod:production .
-   ```
-
-   Or use the build script:
-
-   ```bash
-   ./deploy/build-and-push.sh quay.io/your-username v1.0.0
-   ```
-
-### Pushing to Container Registry
-
-#### Quay.io
-
-1. **Tag the image**:
-
-   ```bash
-   docker tag tamaod:production quay.io/your-username/tamaod:latest
-   docker tag tamaod:production quay.io/your-username/tamaod:v1.0.0
-   ```
-
-2. **Push to Quay.io**:
-   ```bash
-   docker login quay.io
-   docker push quay.io/your-username/tamaod:latest
-   docker push quay.io/your-username/tamaod:v1.0.0
-   ```
-
-#### Docker Hub
-
-1. **Tag the image**:
-
-   ```bash
-   docker tag tamaod:production your-username/tamaod:latest
-   docker tag tamaod:production your-username/tamaod:v1.0.0
-   ```
-
-2. **Push to Docker Hub**:
-   ```bash
-   docker login
-   docker push your-username/tamaod:latest
-   docker push your-username/tamaod:v1.0.0
-   ```
-
-### Running in Production
-
-#### Basic Production Run
+### Development Mode (HTTP)
 
 ```bash
-# Stop and remove existing container (if any)
-podman stop tamaod-app 2>/dev/null || true
-podman rm tamaod-app 2>/dev/null || true
+# Create environment file for development
+cat > .env << 'EOF'
+SECRET_KEY=dev-secret-key-not-for-production
+DEBUG=True
+DJANGO_ENV=development
+ALLOWED_HOSTS=localhost,127.0.0.1
+SSL_ENABLED=false
+EOF
 
-# Ensure you have .env.prod configured (see "Building for Production" above)
-# The environment file must contain at minimum:
-# - SECRET_KEY (required)
-# - ALLOWED_HOSTS (your domain)
-# - DEBUG=False
+# Build and run
+podman build -f deploy/Dockerfile -t tamaod:dev .
+podman run -it --rm -p 8080:8080 --env-file .env tamaod:dev
 
-podman run -d \
-  --name tamaod-app \
-  -p 0.0.0.0:8080:8080 \
-  --env-file .env.prod \
-  --restart unless-stopped \
-  quay.io/your-username/tamaod:latest
+# Access: http://localhost:8080/
 ```
 
-**Important:**
+### Production Mode (HTTPS)
 
-- The `SECRET_KEY` in `.env.prod` is required. The container will not start without it.
-- The container uses **REAL APIs by default** (Nominatim and GISN). Mock APIs are only used if explicitly enabled with `USE_MOCK_NOMINATIVE=True` and `USE_MOCK_GISN=True` in your `.env.prod` file.
-- Never commit `.env.prod` to version control - it contains secrets.
+```bash
+# 1. Create production environment file
+cp .env.example .env
+# Edit .env with real values (especially SECRET_KEY and ALLOWED_HOSTS)
+
+# 2. Build and run with SSL
+podman build -f deploy/Dockerfile -t tamaod:prod .
+podman run -d \
+  --name tamaod-app \
+  -p 80:8080 \
+  -p 443:8443 \
+  --env-file .env \
+  -v /etc/letsencrypt/live/yourdomain.com/fullchain.pem:/etc/ssl/certs/app.crt:ro,z \
+  -v /etc/letsencrypt/live/yourdomain.com/privkey.pem:/etc/ssl/private/app.key:ro,z \
+  --restart unless-stopped \
+  tamaod:prod
+
+# Access: https://yourdomain.com/
+```
+
+---
+
+## Architecture
+
+```
+Internet → nginx (SSL termination) → gunicorn → Django
+              ↓
+    Certs mounted at runtime:
+    /etc/ssl/certs/app.crt
+    /etc/ssl/private/app.key
+```
+
+- **nginx**: Reverse proxy, static files, SSL termination (ports 8080/8443)
+- **gunicorn**: WSGI server for Django (port 8000 internal)
+- **supervisor**: Process manager
+
+---
+
+## SSL Configuration
+
+### SSL Modes
+
+| `SSL_ENABLED`    | Behavior                               |
+| ---------------- | -------------------------------------- |
+| `auto` (default) | HTTPS if certs mounted, otherwise HTTP |
+| `true`           | Require HTTPS (fails without certs)    |
+| `false`          | HTTP only                              |
+
+### Certificate Mount Points
+
+| File        | Container Path             |
+| ----------- | -------------------------- |
+| Certificate | `/etc/ssl/certs/app.crt`   |
+| Private Key | `/etc/ssl/private/app.key` |
+
+### Certificate Options
+
+Mount any SSL certificate using the standard paths. The container accepts certificates from any source: commercial certificate authorities, Let's Encrypt, corporate CAs, or self-signed.
+
+**Generic mounting pattern:**
+
+```bash
+podman run -d \
+  -p 80:8080 -p 443:8443 \
+  --env-file .env \
+  -v /path/to/cert.crt:/etc/ssl/certs/app.crt:ro,z \
+  -v /path/to/key.pem:/etc/ssl/private/app.key:ro,z \
+  tamaod:prod
+```
+
+**Example: Let's Encrypt**
+
+```bash
+# Get certificate
+sudo certbot certonly --standalone -d yourdomain.com -m your@email.com
+
+# Run container
+podman run -d \
+  -p 80:8080 -p 443:8443 \
+  --env-file .env \
+  -v /etc/letsencrypt/live/yourdomain.com/fullchain.pem:/etc/ssl/certs/app.crt:ro,z \
+  -v /etc/letsencrypt/live/yourdomain.com/privkey.pem:/etc/ssl/private/app.key:ro,z \
+  tamaod:prod
+
+# Auto-renewal (add to crontab)
+0 3 * * * certbot renew --quiet --deploy-hook 'podman restart tamaod-app'
+```
+
+**Example: Custom CA Certificate**
+
+```bash
+podman run -d \
+  -p 80:8080 -p 443:8443 \
+  --env-file .env \
+  -v /path/to/cert.crt:/etc/ssl/certs/app.crt:ro,z \
+  -v /path/to/key.pem:/etc/ssl/private/app.key:ro,z \
+  tamaod:prod
+```
+
+**Example: Self-Signed (Testing Only)**
+
+```bash
+# Generate self-signed cert
+./scripts/generate_ssl_cert.sh
+chmod 644 .ssl/localhost.key  # Make readable
+
+# Run container
+podman run -it --rm \
+  -p 8080:8080 -p 8443:8443 \
+  --env-file .env \
+  -v $(pwd)/.ssl/localhost.crt:/etc/ssl/certs/app.crt:ro,z \
+  -v $(pwd)/.ssl/localhost.key:/etc/ssl/private/app.key:ro,z \
+  tamaod:prod
+
+# Access: https://localhost:8443/ (accept browser warning)
+```
+
+---
 
 ## Environment Variables
 
-| Variable              | Default                       | Description                                     |
-| --------------------- | ----------------------------- | ----------------------------------------------- |
-| `SECRET_KEY`          | _required_                    | Django secret key                               |
-| `DEBUG`               | `False`                       | Enable Django debug mode                        |
-| `DJANGO_ENV`          | `production`                  | Environment setting                             |
-| `ALLOWED_HOSTS`       | `localhost,127.0.0.1,0.0.0.0` | Comma-separated allowed hosts                   |
-| `USE_MOCK_NOMINATIVE` | `False`                       | Use mock nominative service (default: REAL API) |
-| `USE_MOCK_GISN`       | `False`                       | Use mock GISN service (default: REAL API)       |
+| Variable        | Default               | Description                          |
+| --------------- | --------------------- | ------------------------------------ |
+| `SECRET_KEY`    | _required_            | Django secret key                    |
+| `DEBUG`         | `False`               | Debug mode                           |
+| `DJANGO_ENV`    | `production`          | Environment: production, development |
+| `ALLOWED_HOSTS` | `localhost,127.0.0.1` | Allowed hostnames                    |
+| `SSL_ENABLED`   | `auto`                | SSL mode                             |
 
-## Container Structure
-
-- **Port**: 8080 (nginx frontend)
-- **Health Check**: `/health/` endpoint
-- **Static Files**: Served by nginx at `/static/`
-- **Media Files**: Served by nginx at `/media/`
-- **Application**: Django app behind nginx proxy (gunicorn on port 8000)
-
-## Monitoring and Logs
-
-### View Logs
+Generate a secret key:
 
 ```bash
-# All logs
-docker logs tamaod-app
-
-# Follow logs
-docker logs -f tamaod-app
-
-# Supervisor logs (inside container)
-docker exec tamaod-app tail -f /var/log/supervisor/supervisord.log
+python3 -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
 ```
 
-### Health Check
+---
+
+## Container Management
+
+```bash
+# View logs
+podman logs -f tamaod-app
+
+# Stop/start
+podman stop tamaod-app
+podman start tamaod-app
+
+# Remove
+podman stop tamaod-app && podman rm tamaod-app
+
+# Enter container
+podman exec -it tamaod-app /bin/bash
+
+# Check processes
+podman exec tamaod-app supervisorctl status
+
+# Test nginx config
+podman exec tamaod-app nginx -t
+```
+
+---
+
+## Health Check
 
 ```bash
 curl http://localhost:8080/health/
+curl -k https://localhost:8443/health/
 ```
+
+---
 
 ## Troubleshooting
 
-### Common Issues
-
-1. **Port already in use**:
-
-   ```bash
-   # Use different port
-   podman run -p 0.0.0.0:8081:8080 tamaod:latest
-   ```
-
-2. **Permission issues**:
-
-   ```bash
-   # Check container logs
-   docker logs tamaod-app
-   ```
-
-3. **Static files not loading**:
-   - Ensure nginx configuration is correct
-   - Check `/static/` path in container
-
-### Debug Container
+### Port already in use
 
 ```bash
-# Enter running container
-docker exec -it tamaod-app /bin/bash
-
-# Check processes
-docker exec tamaod-app supervisorctl status
-
-# Check nginx
-docker exec tamaod-app nginx -t
+podman run -p 8081:8080 ...  # Use different port
 ```
 
-## Security Considerations
+### SSL certificate errors
 
-- Always use strong `SECRET_KEY` in production
-- Set `DEBUG=False` in production
-- Configure proper `ALLOWED_HOSTS`
-- Use HTTPS in production (configure reverse proxy)
-- Regularly update base images and dependencies
-- Consider using secrets management for sensitive environment variables
+```bash
+# Check certs are mounted
+podman exec tamaod-app ls -la /etc/ssl/certs/app.crt
+podman exec tamaod-app ls -la /etc/ssl/private/app.key
+
+# Check cert validity
+podman exec tamaod-app openssl x509 -in /etc/ssl/certs/app.crt -noout -dates
+```
+
+### SELinux issues (Fedora/RHEL)
+
+```bash
+# Add :z to volume mounts
+-v /path/to/cert:/etc/ssl/certs/app.crt:ro,z
+```
+
+### nginx won't start
+
+```bash
+# Debug mode
+podman run -it --rm --entrypoint /bin/bash ... tamaod:prod
+nginx -t  # Check config
+cat /var/log/nginx/error.log
+```
+
+---
+
+## Pushing to Registry
+
+```bash
+# Tag
+podman tag tamaod:prod quay.io/username/tamaod:v1.0.0
+podman tag tamaod:prod quay.io/username/tamaod:latest
+
+# Push
+podman login quay.io
+podman push quay.io/username/tamaod:v1.0.0
+podman push quay.io/username/tamaod:latest
+```
+
+---
+
+## Security
+
+### Container Security
+
+- ✅ No hardcoded secrets - all sensitive data via environment variables
+- ✅ No dev files or git history in image
+- ✅ SSL certificates mounted at runtime, never baked in
+- ✅ Runs as non-root user (`app`)
+- ✅ Production-only dependencies
+
+### SSL/TLS Features
+
+| Feature      | Configuration            |
+| ------------ | ------------------------ |
+| TLS Versions | 1.2 and 1.3 only         |
+| HSTS         | Enabled (2 year max-age) |
+| Ciphers      | Modern ECDHE-based       |
+
+### Security Headers (nginx)
+
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `X-XSS-Protection: 1; mode=block`
+- `Strict-Transport-Security` (HTTPS only)
+
+### Production Checklist
+
+- [ ] Generate unique `SECRET_KEY`
+- [ ] Set `DEBUG=False`
+- [ ] Configure `ALLOWED_HOSTS` with your domain(s)
+- [ ] Enable HTTPS with trusted certificates
+- [ ] Set up certificate auto-renewal
+- [ ] Never commit `.env` (contains secrets)
+
+### Reporting Vulnerabilities
+
+Do NOT create public issues for security vulnerabilities. Contact the maintainer privately.
